@@ -101,7 +101,7 @@ export function SignIn() {
             className="!mt-4 text-center font-normal"
           >
             Not registered?{" "}
-            <a href="#" className="font-medium text-gray-900">
+            <a href="#" className="font-medium text-blue-700">
               Create a new account
             </a>
           </Typography>

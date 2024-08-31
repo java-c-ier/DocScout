@@ -1,0 +1,61 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.hover-links {
+  position: relative;
+  color: #000;
+  text-decoration: none;
+}
+
+.hover-links:hover {
+  color: #000;
+}
+
+.hover-links:before {
+  content: "";
+  position: absolute;
+  width: 100%;
+  height: 1px;
+  bottom: 0;
+  left: 0;
+  background-color: #000;
+  visibility: hidden;
+  -webkit-transform: scaleX(0);
+  transform: scaleX(0);
+  -webkit-transition: all 0.3s ease-in-out 0s;
+  transition: all 0.3s ease-in-out 0s;
+}
+
+.hover-links:hover:before {
+  visibility: visible;
+  -webkit-transform: scaleX(1);
+  transform: scaleX(1);
+}
+
+@media screen and (max-width : 900px) {
+    .hover-links:hover:before{
+        visibility: hidden;
+    }
+    .flex{
+      padding:0 8px;
+    }
+}
+
+  .log-in{
+    color: rgb(42, 145, 235) 
+  }
+  
+  .log-in:hover{
+    color: white;
+  }
+  
+  .sign-in:hover{
+    color: #2294f2;
+    /* decoration: none; */
+  }
+  
+  .log-in:hover, .sign-in:hover{
+    transition: all 0.3s ease-in-out;
+  }  
+

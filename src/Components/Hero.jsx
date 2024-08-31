@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import Doctor from "../Assets/doctor-picture.png";
+import Doctor from "../assets/Doctor.png"
 import "../Styles/Hero.css";
 import { Input } from "@material-tailwind/react";
 import { TbSearch } from "react-icons/tb";

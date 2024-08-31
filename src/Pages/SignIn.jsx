@@ -14,17 +14,17 @@ export function SignIn() {
         <Typography variant="h3" color="blue" className="mb-2">
           Sign In
         </Typography>
-        <Typography className="mb-16 text-gray-800 font-normal text-[18px]">
-          Enter your email and password
+        <Typography className="mb-10 text-gray-900 font-semibold text-[18px]">
+          Enter your credentials
         </Typography>
-        <form action="#" className="mx-auto max-w-[24rem] text-left">
+        <form action="" className="mx-auto max-w-[24rem] text-left">
           <div className="mb-6">
             <label htmlFor="email">
               <Typography
-                variant="small"
-                className="mb-2 block font-medium text-gray-900"
+                variant="medium"
+                className="mb-2 block font-semibold text-gray-900"
               >
-                Your Email
+                Email
               </Typography>
             </label>
             <Input
@@ -33,7 +33,7 @@ export function SignIn() {
               size="lg"
               type="email"
               name="email"
-              placeholder="name@mail.com"
+              placeholder="Email"
               className="w-full placeholder:opacity-100 focus:border-t-primary border-t-blue-gray-200"
               labelProps={{
                 className: "hidden",
@@ -43,15 +43,15 @@ export function SignIn() {
           <div className="mb-6">
             <label htmlFor="password">
               <Typography
-                variant="small"
-                className="mb-2 block font-medium text-gray-900"
+                variant="medium"
+                className="mb-2 block font-semibold text-gray-900"
               >
                 Password
               </Typography>
             </label>
             <Input
               size="lg"
-              placeholder="********"
+              placeholder="Password"
               labelProps={{
                 className: "hidden",
               }}
@@ -98,7 +98,7 @@ export function SignIn() {
           <Typography
             variant="small"
             color="gray"
-            className="!mt-4 text-center font-normal"
+            className="mt-4 text-center font-normal text-gray-900"
           >
             Not registered?{" "}
             <a href="#" className="font-medium text-blue-700">

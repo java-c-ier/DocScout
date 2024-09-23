@@ -1,38 +1,50 @@
-import React from "react";
-import { useState } from "react";
-import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
-import { app } from "../Firebase";
+import React, { useState } from "react";
+import { getAuth, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+import { app } from './../Firebase';
 
 import { Typography, Input, Button } from "@material-tailwind/react";
 import { EyeSlashIcon, EyeIcon } from "@heroicons/react/24/solid";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 
 const auth = getAuth(app);
+const googleProvider = new GoogleAuthProvider();
 
 function SignIn() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [passwordShown, setPasswordShown] = useState(false);
 
+  const navigate = useNavigate();
+
   const togglePasswordVisiblity = () => setPasswordShown((cur) => !cur);
 
   const signInUser = (event) => {
-    event.preventDefault(); // Prevent form submission
+    event.preventDefault();
 
-    // Check if the password is at least 6 characters long
     if (password.length < 6) {
       alert("Password must be at least 6 characters long");
-      return; // Prevent further execution if the condition is not met
+      return; 
     }
+
     signInWithEmailAndPassword(auth, email, password)
       .then((value) => {
         alert("Logged in successfully");
-        // console.log("User created successfully:", value.user);
+        navigate("/");
       })
       .catch((error) => {
         alert("Error logging user: " + error.message);
-        // console.log("Error:", error);
       });
+  };
+
+  const signInWithGoogle = async () => {
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      alert("Signed in with Google successfully");
+      navigate("/");
+    } catch (error) {
+      alert("Error signing in with Google: " + error.message);
+      console.error("Google Sign-In Error:", error);
+    }
   };
 
   return (
@@ -121,6 +133,7 @@ function SignIn() {
             </Typography>
           </div>
           <Button
+            onClick={signInWithGoogle} // Trigger Google Sign-In
             variant="outlined"
             size="lg"
             className="mt-6 flex h-12 items-center justify-center gap-2"

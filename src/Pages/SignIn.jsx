@@ -1,15 +1,42 @@
 import React from "react";
 import { useState } from "react";
+import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
+import { app } from "../Firebase";
 
 import { Typography, Input, Button } from "@material-tailwind/react";
 import { EyeSlashIcon, EyeIcon } from "@heroicons/react/24/solid";
+import { NavLink } from "react-router-dom";
 
-export function SignIn() {
+const auth = getAuth(app);
+
+function SignIn() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [passwordShown, setPasswordShown] = useState(false);
+
   const togglePasswordVisiblity = () => setPasswordShown((cur) => !cur);
 
+  const signInUser = (event) => {
+    event.preventDefault(); // Prevent form submission
+
+    // Check if the password is at least 6 characters long
+    if (password.length < 6) {
+      alert("Password must be at least 6 characters long");
+      return; // Prevent further execution if the condition is not met
+    }
+    signInWithEmailAndPassword(auth, email, password)
+      .then((value) => {
+        alert("Logged in successfully");
+        // console.log("User created successfully:", value.user);
+      })
+      .catch((error) => {
+        alert("Error logging user: " + error.message);
+        // console.log("Error:", error);
+      });
+  };
+
   return (
-    <section className="grid text-center items-center p-10">
+    <section className="grid text-center items-center p-6">
       <div>
         <Typography variant="h3" color="blue" className="mb-2">
           Sign In
@@ -17,24 +44,26 @@ export function SignIn() {
         <Typography className="mb-10 text-gray-900 font-semibold text-[18px]">
           Enter your credentials
         </Typography>
-        <form action="" className="mx-auto max-w-[24rem] text-left">
+        <form onSubmit={signInUser} className="mx-auto max-w-[24rem] text-left">
           <div className="mb-6">
             <label htmlFor="email">
               <Typography
-                variant="medium"
+                variant="h6"
                 className="mb-2 block font-semibold text-gray-900"
               >
                 Email
               </Typography>
             </label>
             <Input
+              onChange={(e) => setEmail(e.target.value)}
+              value={email}
               id="email"
-              color="gray"
+              color="black"
               size="lg"
               type="email"
               name="email"
               placeholder="Email"
-              className="w-full placeholder:opacity-100 focus:border-t-primary border-t-blue-gray-200"
+              className="w-full placeholder:opacity-100 focus:border-black border-t-gray-900"
               labelProps={{
                 className: "hidden",
               }}
@@ -43,19 +72,22 @@ export function SignIn() {
           <div className="mb-6">
             <label htmlFor="password">
               <Typography
-                variant="medium"
+                variant="h6"
                 className="mb-2 block font-semibold text-gray-900"
               >
                 Password
               </Typography>
             </label>
             <Input
+              onChange={(p) => setPassword(p.target.value)}
+              value={password}
+              color="black"
               size="lg"
               placeholder="Password"
               labelProps={{
                 className: "hidden",
               }}
-              className="w-full placeholder:opacity-100 focus:border-t-primary border-t-blue-gray-200"
+              className="w-full placeholder:opacity-100 focus:border-black border-t-gray-900"
               type={passwordShown ? "text" : "password"}
               icon={
                 <i onClick={togglePasswordVisiblity}>
@@ -68,7 +100,13 @@ export function SignIn() {
               }
             />
           </div>
-          <Button color="blue" size="lg" className="mt-6" fullWidth>
+          <Button
+            type="submit"
+            color="blue"
+            size="lg"
+            className="mt-8"
+            fullWidth
+          >
             sign in
           </Button>
           <div className="!mt-4 flex justify-end">
@@ -101,9 +139,13 @@ export function SignIn() {
             className="mt-4 text-center font-normal text-gray-900"
           >
             Not registered?{" "}
-            <a href="#" className="font-medium text-blue-700">
+            <NavLink
+              href="#"
+              className="font-medium text-blue-700"
+              to="/signup"
+            >
               Create a new account
-            </a>
+            </NavLink>
           </Typography>
         </form>
       </div>

@@ -1,9 +1,14 @@
 import React, { useState } from "react";
 import { Typography, Input, Button } from "@material-tailwind/react";
 import { EyeSlashIcon, EyeIcon } from "@heroicons/react/24/solid";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom"; // Add useNavigate
 import { app } from "../Firebase";
-import { getAuth, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+import {
+  getAuth,
+  createUserWithEmailAndPassword,
+  GoogleAuthProvider,
+  signInWithPopup,
+} from "firebase/auth";
 
 const auth = getAuth(app);
 const googleProvider = new GoogleAuthProvider();
@@ -12,6 +17,8 @@ function SignUp() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [passwordShown, setPasswordShown] = useState(false);
+
+  const navigate = useNavigate(); // Initialize navigate
 
   const togglePasswordVisibility = () => setPasswordShown((cur) => !cur);
 
@@ -26,7 +33,6 @@ function SignUp() {
     createUserWithEmailAndPassword(auth, email, password)
       .then((value) => {
         alert("User created");
-        // console.log("User created successfully:", value.user);
       })
       .catch((error) => {
         alert("Error creating user: " + error.message);
@@ -34,9 +40,17 @@ function SignUp() {
       });
   };
 
-  const signUpWithGoogle = () => {
-    signInWithPopup(auth, googleProvider);
-  }
+  // Modify the signUpWithGoogle function to include async/await
+  const signUpWithGoogle = async () => {
+    try {
+      await signInWithPopup(auth, googleProvider); // Wait for Google sign-in
+      alert("Google Sign-in successful");
+      navigate("/"); // Navigate to home page after success
+    } catch (error) {
+      alert("Error signing in with Google: " + error.message);
+      console.error("Google sign-in error:", error);
+    }
+  };
 
   return (
     <section className="grid text-center items-center p-4">

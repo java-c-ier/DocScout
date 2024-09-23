@@ -90,16 +90,16 @@ export function Nav() {
           <Typography className="mr-16 cursor-pointer py-1.5 lg:font-bold font-black text-xl">
             HealthCare Finder
           </Typography>
-          <div className="mr-20 hidden lg:block">{navList}</div>
+          <div className="mr-15 hidden lg:block">{navList}</div>
           <div className="flex items-center gap-x-4">
             {/* Conditionally render based on whether user is logged in */}
             {user ? (
               <div className="flex items-center gap-2">
-                <Typography className="font-semibold text-blue-700">
+                <Typography className="font-semibold text-blue-700 mr-4">
                 Welcome, {getFirstName(user.displayName)}
                 </Typography>
                 <Button
-                  variant="outlined"
+                  variant="filled"
                   size="sm"
                   color="red"
                   className="sign-out hidden lg:inline-block"

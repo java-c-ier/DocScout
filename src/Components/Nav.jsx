@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   Navbar,
   MobileNav,
@@ -7,46 +7,62 @@ import {
   IconButton,
 } from "@material-tailwind/react";
 import { NavLink } from "react-router-dom";
+import { getAuth, onAuthStateChanged, signOut } from "firebase/auth"; // Import Firebase auth methods
 import "../Styles/Nav.css";
 
 export function Nav() {
-  const [openNav, setOpenNav] = React.useState(false);
+  const [openNav, setOpenNav] = useState(false);
+  const [user, setUser] = useState(null); // State to hold user info
 
-  React.useEffect(() => {
+  const auth = getAuth();
+
+  useEffect(() => {
+    // Listener for auth state changes
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setUser(user); // Set user info when logged in
+      } else {
+        setUser(null); // Set user as null when logged out
+      }
+    });
+
+    // Cleanup listener on component unmount
+    return () => unsubscribe();
+  }, [auth]);
+
+  const handleSignOut = () => {
+    signOut(auth).then(() => {
+      setUser(null); // Reset user state after signing out
+    });
+  };
+
+  useEffect(() => {
     window.addEventListener(
       "resize",
       () => window.innerWidth >= 800 && setOpenNav(false)
     );
   }, []);
 
+  const getFirstName = (displayName) => {
+    if (displayName) {
+      return displayName.split(" ")[0]; // Get the first part of the name
+    }
+    return "User"; // Default to "User" if no display name is available
+  };
+
   const navList = (
     <ul className="mt-2 mb-4 flex flex-col gap-2 lg:mb-0 lg:mt-0 lg:flex-row lg:items-center lg:gap-6">
-      <Typography
-        as="li"
-        // variant="medium"
-        color="blue-gray"
-        className="p-1 font-normal"
-      >
+      <Typography as="li" color="blue-gray" className="p-1 font-normal">
         <NavLink className="hover-links flex items-center" to="/">
           Home
         </NavLink>
       </Typography>
-      <Typography
-        as="li"
-        // variant="medium"
-        color="blue-gray"
-        className="p-1 font-normal"
-      >
+      <Typography as="li" color="blue-gray" className="p-1 font-normal">
         <NavLink href="#" className="hover-links flex items-center" to="/about">
           About
         </NavLink>
       </Typography>
-      <Typography
-        as="li"
-        // variant="medium"
-        color="blue-gray"
-        className="p-1 font-normal"
-      >
+      <Typography as="li" color="blue-gray" className="p-1 font-normal">
         <NavLink
           href="#"
           className="hover-links flex items-center"
@@ -55,12 +71,7 @@ export function Nav() {
           Testimonials
         </NavLink>
       </Typography>
-      <Typography
-        as="li"
-        // variant="medium"
-        color="blue-gray"
-        className="p-1 font-normal"
-      >
+      <Typography as="li" color="blue-gray" className="p-1 font-normal">
         <NavLink
           href="#"
           className="hover-links flex items-center"
@@ -79,26 +90,36 @@ export function Nav() {
           <Typography className="mr-16 cursor-pointer py-1.5 lg:font-bold font-black text-xl">
             HealthCare Finder
           </Typography>
-          {/* <div className="flex items-center gap-4"></div> */}
           <div className="mr-20 hidden lg:block">{navList}</div>
           <div className="flex items-center gap-x-4">
-            {/* <Button
-              variant="text"
-              size="sm"
-              className="log-in hidden lg:inline-block hover:bg-[#2294f2]"
-            >
-              <NavLink to='/login'><span>Log In</span></NavLink>
-            </Button> */}
-            <NavLink to="/signin">
-              <Button
-                variant="filled"
-                size="sm"
-                color="blue"
-                className="sign-in hidden lg:inline-block hover:bg-white"
-              >
-                Sign In
-              </Button>
-            </NavLink>
+            {/* Conditionally render based on whether user is logged in */}
+            {user ? (
+              <div className="flex items-center gap-2">
+                <Typography className="font-semibold text-blue-700">
+                Welcome, {getFirstName(user.displayName)}
+                </Typography>
+                <Button
+                  variant="outlined"
+                  size="sm"
+                  color="red"
+                  className="sign-out hidden lg:inline-block"
+                  onClick={handleSignOut}
+                >
+                  Sign Out
+                </Button>
+              </div>
+            ) : (
+              <NavLink to="/signin">
+                <Button
+                  variant="filled"
+                  size="sm"
+                  color="blue"
+                  className="sign-in hidden lg:inline-block hover:bg-white"
+                >
+                  Sign In
+                </Button>
+              </NavLink>
+            )}
           </div>
           <IconButton
             variant="text"
@@ -141,50 +162,34 @@ export function Nav() {
         <MobileNav open={openNav}>
           {navList}
           <div className="flex items-center justify-center gap-x-4">
-            {/* <Button fullWidth variant="text" size="lg" className="log-in-mobile flex items-center justify-center h-10">
-            <NavLink to='/login'><span>Log In</span></NavLink>
-            </Button> */}
-            <NavLink to="/signin" className='w-full'>
+            {/* Conditionally render mobile sign-in or welcome message */}
+            {user ? (
               <Button
                 fullWidth
                 variant="gradient"
                 size="lg"
-                color="blue"
-                className="sign-in-mobile flex items-center justify-center h-10"
+                color="red"
+                className="sign-out-mobile flex items-center justify-center h-10"
+                onClick={handleSignOut}
               >
-                Sign In
+                Sign Out
               </Button>
-            </NavLink>
+            ) : (
+              <NavLink to="/signin" className="w-full">
+                <Button
+                  fullWidth
+                  variant="gradient"
+                  size="lg"
+                  color="blue"
+                  className="sign-in-mobile flex items-center justify-center h-10"
+                >
+                  Sign In
+                </Button>
+              </NavLink>
+            )}
           </div>
         </MobileNav>
       </Navbar>
-      {/* <div className="mx-auto max-w-screen-md py-12">
-        <Card className="mb-12 overflow-hidden">
-          <img
-            alt="nature"
-            className="h-[32rem] w-full object-cover object-center"
-            src="https://images.unsplash.com/photo-1485470733090-0aae1788d5af?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2717&q=80"
-          />
-        </Card>
-        <Typography variant="h2" color="blue-gray" className="mb-2">
-          What is Material Tailwind
-        </Typography>
-        <Typography color="gray" className="font-normal">
-          Can you help me out? you will get a lot of free exposure doing this
-          can my website be in english?. There is too much white space do less
-          with more, so that will be a conversation piece can you rework to make
-          the pizza look more delicious other agencies charge much lesser can
-          you make the blue bluer?. I think we need to start from scratch can my
-          website be in english?, yet make it sexy i&apos;ll pay you in a week
-          we don&apos;t need to pay upfront i hope you understand can you make
-          it stand out more?. Make the font bigger can you help me out? you will
-          get a lot of free exposure doing this that&apos;s going to be a chunk
-          of change other agencies charge much lesser. Are you busy this
-          weekend? I have a new project with a tight deadline that&apos;s going
-          to be a chunk of change. There are more projects lined up charge extra
-          the next time.
-        </Typography>
-      </div> */}
     </div>
   );
 }

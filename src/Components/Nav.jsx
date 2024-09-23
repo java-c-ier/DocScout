@@ -12,7 +12,29 @@ import "../Styles/Nav.css";
 
 export function Nav() {
   const [openNav, setOpenNav] = useState(false);
+  const [user, setUser] = useState(null);
   const navRef = useRef(null);
+
+  const auth = getAuth();
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setUser(user);
+      } else {
+        setUser(null);
+      }
+    });
+
+    return () => unsubscribe();
+  }, [auth]);
+
+  const handleSignOut = () => {
+    signOut(auth).then(() => {
+      setUser(null);
+      setOpenNav(false);
+    });
+  };
 
   useEffect(() => {
     const handleOutsideClick = (event) => {
@@ -37,25 +59,51 @@ export function Nav() {
 
   const closeNav = () => setOpenNav(false);
 
+  const getFirstName = (displayName) => {
+    if (displayName) {
+      return displayName.split(" ")[0];
+    }
+    return "User";
+  };
+
   const navList = (
     <ul className="mt-2 mb-4 flex flex-col gap-2 lg:mb-0 lg:mt-0 lg:flex-row lg:items-center lg:gap-6">
       <Typography as="li" color="blue-gray" className="p-1 font-normal">
-        <NavLink className="hover-links flex items-center" to="/" onClick={closeNav}>
+        <NavLink
+          className="hover-links flex items-center"
+          to="/"
+          onClick={closeNav}
+        >
           Home
         </NavLink>
       </Typography>
       <Typography as="li" color="blue-gray" className="p-1 font-normal">
-        <NavLink className="hover-links flex items-center" to="/about" onClick={closeNav}>
+        <NavLink
+          href="#"
+          className="hover-links flex items-center"
+          to="/about"
+          onClick={closeNav}
+        >
           About
         </NavLink>
       </Typography>
       <Typography as="li" color="blue-gray" className="p-1 font-normal">
-        <NavLink className="hover-links flex items-center" to="/testimonials" onClick={closeNav}>
+        <NavLink
+          href="#"
+          className="hover-links flex items-center"
+          to="/testimonials"
+          onClick={closeNav}
+        >
           Testimonials
         </NavLink>
       </Typography>
       <Typography as="li" color="blue-gray" className="p-1 font-normal">
-        <NavLink className="hover-links flex items-center" to="/contact" onClick={closeNav}>
+        <NavLink
+          href="#"
+          className="hover-links flex items-center"
+          to="/contact"
+          onClick={closeNav}
+        >
           Contact
         </NavLink>
       </Typography>
@@ -71,16 +119,33 @@ export function Nav() {
           </Typography>
           <div className="mr-20 hidden lg:block">{navList}</div>
           <div className="flex items-center gap-x-4">
-            <NavLink to="/signin">
-              <Button
-                variant="filled"
-                size="sm"
-                color="blue"
-                className="sign-in hidden lg:inline-block hover:bg-white"
-              >
-                Sign In
-              </Button>
-            </NavLink>
+            {user ? (
+              <div className="flex items-center gap-2">
+                <Typography className="font-semibold text-blue-700">
+                  Welcome, {getFirstName(user.displayName)}
+                </Typography>
+                <Button
+                  variant="outlined"
+                  size="sm"
+                  color="red"
+                  className="sign-out hidden lg:inline-block"
+                  onClick={handleSignOut}
+                >
+                  Sign Out
+                </Button>
+              </div>
+            ) : (
+              <NavLink to="/signin">
+                <Button
+                  variant="filled"
+                  size="sm"
+                  color="blue"
+                  className="sign-in hidden lg:inline-block hover:bg-white"
+                >
+                  Sign In
+                </Button>
+              </NavLink>
+            )}
           </div>
           <IconButton
             variant="text"
@@ -97,7 +162,11 @@ export function Nav() {
                 stroke="currentColor"
                 strokeWidth={3}
               >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             ) : (
               <svg
@@ -107,7 +176,11 @@ export function Nav() {
                 stroke="currentColor"
                 strokeWidth={2}
               >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M4 6h16M4 12h16M4 18h16"
+                />
               </svg>
             )}
           </IconButton>
@@ -115,18 +188,31 @@ export function Nav() {
         <MobileNav open={openNav}>
           {navList}
           <div className="flex items-center justify-center gap-x-4">
-            <NavLink to="/signin" className="w-full">
+            {user ? (
               <Button
                 fullWidth
                 variant="gradient"
                 size="lg"
-                color="blue"
-                className="sign-in-mobile flex items-center justify-center h-10"
-                onClick={closeNav}
+                color="red"
+                className="sign-out-mobile flex items-center justify-center h-10"
+                onClick={handleSignOut}
               >
-                Sign In
+                Sign Out
               </Button>
-            </NavLink>
+            ) : (
+              <NavLink to="/signin" className="w-full">
+                <Button
+                  fullWidth
+                  variant="gradient"
+                  size="lg"
+                  color="blue"
+                  className="sign-in-mobile flex items-center justify-center h-10"
+                  onClick={closeNav}
+                >
+                  Sign In
+                </Button>
+              </NavLink>
+            )}
           </div>
         </MobileNav>
       </Navbar>

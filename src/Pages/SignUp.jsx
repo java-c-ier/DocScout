@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Typography, Input, Button } from "@material-tailwind/react";
 import { EyeSlashIcon, EyeIcon } from "@heroicons/react/24/solid";
-import { NavLink, useNavigate } from "react-router-dom"; // Add useNavigate
+import { NavLink, useNavigate } from "react-router-dom";
 import { app } from "../Firebase";
 import {
   getAuth,
@@ -18,36 +18,31 @@ function SignUp() {
   const [password, setPassword] = useState("");
   const [passwordShown, setPasswordShown] = useState(false);
 
-  const navigate = useNavigate(); // Initialize navigate
+  const navigate = useNavigate();
 
   const togglePasswordVisibility = () => setPasswordShown((cur) => !cur);
 
   const createUser = (event) => {
-    event.preventDefault(); // Prevent form submission
+    event.preventDefault();
 
-    // Check if the password is at least 6 characters long
     if (password.length < 6) {
       alert("Password must be at least 6 characters long");
-      return; // Prevent further execution if the condition is not met
+      return;
     }
     createUserWithEmailAndPassword(auth, email, password)
       .then((value) => {
-        alert("User created");
+        navigate("/");
       })
       .catch((error) => {
         alert("Error creating user: " + error.message);
-        console.log("Error:", error);
       });
   };
 
-  // Modify the signUpWithGoogle function to include async/await
   const signUpWithGoogle = async () => {
     try {
-      await signInWithPopup(auth, googleProvider); // Wait for Google sign-in
-      alert("Google Sign-in successful");
-      navigate("/"); // Navigate to home page after success
+      await signInWithPopup(auth, googleProvider);
+      navigate("/");
     } catch (error) {
-      alert("Error signing in with Google: " + error.message);
       console.error("Google sign-in error:", error);
     }
   };

@@ -28,7 +28,6 @@ function SignIn() {
 
     signInWithEmailAndPassword(auth, email, password)
       .then((value) => {
-        alert("Logged in successfully");
         navigate("/");
       })
       .catch((error) => {
@@ -39,10 +38,8 @@ function SignIn() {
   const signInWithGoogle = async () => {
     try {
       const result = await signInWithPopup(auth, googleProvider);
-      alert("Signed in with Google successfully");
       navigate("/");
     } catch (error) {
-      alert("Error signing in with Google: " + error.message);
       console.error("Google Sign-In Error:", error);
     }
   };

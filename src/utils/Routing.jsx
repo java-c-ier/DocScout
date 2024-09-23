@@ -5,6 +5,7 @@ import About from "../Pages/About";
 import Testimonial from "./../Pages/Testimonial";
 import Contact from "./../Components/Contact";
 import SignIn from "../Pages/SignIn";
+import SignUp from "../Pages/SignUp";
 import Nav from "../Components/Nav";
 
 function Routing() {
@@ -17,6 +18,7 @@ function Routing() {
         <Route path="/testimonials" element={<Testimonial />}></Route>
         <Route path="/contact" element={<Contact />}></Route>
         <Route path="/signin" element={<SignIn />}></Route>
+        <Route path="/signup" element={<SignUp />}></Route>
       </Routes>
     </div>
   );

@@ -95,7 +95,7 @@ export function Nav() {
             {/* Conditionally render based on whether user is logged in */}
             {user ? (
               <div className="flex items-center gap-2">
-                <Typography className="font-semibold text-blue-700 mr-4">
+                <Typography className="font-semibold text-blue-700 lg:mr-5 text-md">
                 Welcome, {getFirstName(user.displayName)}
                 </Typography>
                 <Button

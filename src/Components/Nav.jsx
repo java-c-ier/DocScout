@@ -59,13 +59,6 @@ export function Nav() {
 
   const closeNav = () => setOpenNav(false);
 
-  const getFirstName = (displayName) => {
-    if (displayName) {
-      return displayName.split(" ")[0];
-    }
-    return "User";
-  };
-
   const navList = (
     <ul className="mt-2 mb-4 flex flex-col gap-2 lg:mb-0 lg:mt-0 lg:flex-row lg:items-center lg:gap-6">
       <Typography as="li" color="blue-gray" className="p-1 font-normal">
@@ -130,9 +123,9 @@ export function Nav() {
           <div className="flex items-center gap-x-4">
             {user ? (
               <div className="flex items-center gap-2">
-                <Typography className="font-semibold text-blue-700">
+                {/* <Typography className="font-semibold text-blue-700">
                   Welcome, {getFirstName(user.displayName)}
-                </Typography>
+                </Typography> */}
                 <Button
                   variant="outlined"
                   size="sm"

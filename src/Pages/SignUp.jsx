@@ -48,7 +48,7 @@ function SignUp() {
   };
 
   return (
-    <section className="grid text-center items-center p-4">
+    <section className="grid text-center items-center p-4 pt-[85px]">
       <div>
         <Typography variant="h3" color="blue" className="mb-2">
           Sign Up

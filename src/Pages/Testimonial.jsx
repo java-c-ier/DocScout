@@ -27,8 +27,8 @@ function StarIcon() {
 
 function Testimonial() {
   return (
-    <div className="m-10 flex flex-wrap gap-20">
-      <Card color="brown" className="w-full max-w-[26rem] px-4">
+    <div className="p-10 pt-[70px] flex flex-wrap gap-12" id="testimonial">
+      <Card color="brown" className="w-full max-w-[25rem] px-4">
         <CardHeader
           color="transparent"
           floated={false}
@@ -65,7 +65,7 @@ function Testimonial() {
           </Typography>
         </CardBody>
       </Card>
-      <Card color="brown" className="w-full max-w-[26rem] px-4">
+      <Card color="brown" className="w-full max-w-[25rem] px-4">
         <CardHeader
           color="transparent"
           floated={false}
@@ -100,7 +100,7 @@ function Testimonial() {
           </Typography>
         </CardBody>
       </Card>
-      <Card color="brown" className="w-full max-w-[26rem] px-4">
+      <Card color="brown" className="w-full max-w-[25rem] px-4">
         <CardHeader
           color="transparent"
           floated={false}
@@ -134,7 +134,7 @@ function Testimonial() {
           </Typography>
         </CardBody>
       </Card>
-      <Card color="brown" className="w-full max-w-[26rem] px-4">
+      <Card color="brown" className="w-full max-w-[25rem] px-4">
         <CardHeader
           color="transparent"
           floated={false}
@@ -169,7 +169,7 @@ function Testimonial() {
           </Typography>
         </CardBody>
       </Card>
-      <Card color="brown" className="w-full max-w-[26rem] px-4">
+      <Card color="brown" className="w-full max-w-[25rem] px-4">
         <CardHeader
           color="transparent"
           floated={false}

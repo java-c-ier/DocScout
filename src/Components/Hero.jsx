@@ -85,7 +85,7 @@ function Hero() {
   }, []);
 
   return (
-    <div className="section-container">
+    <div className="section-container pt-[60px]" id="home">
       <div className="hero-section">
         <div className="text-section">
           <p className="text-headline">❤️ Health comes first</p>

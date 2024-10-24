@@ -46,7 +46,7 @@ function CSVUpload() {
   };
 
   return (
-    <div>
+    <div className="pt-[80px]">
       <h1>Upload Hospitals CSV</h1>
       <input type="file" id="csvFile" onChange={handleFileChange} accept=".csv" />
       <button onClick={handleFileUpload}>Upload CSV</button>

@@ -59,51 +59,70 @@ export function Nav() {
 
   const closeNav = () => setOpenNav(false);
 
+  // Function to determine the offset based on screen width
+  const getOffset = () => {
+    return window.innerWidth > 900 ? 40 : 50;
+  };
+
+  // Smooth scroll function with an offset
+  const handleScroll = (e, id) => {
+    e.preventDefault();
+    const element = document.getElementById(id);
+    const offset = getOffset(); // Get offset based on current screen size
+    const elementPosition =
+      element.getBoundingClientRect().top + window.pageYOffset - offset;
+
+    // Smooth scroll to the calculated position
+    window.scrollTo({
+      top: elementPosition,
+      behavior: "smooth",
+    });
+
+    closeNav(); // Close the mobile nav after scrolling
+  };
+
   const navList = (
     <ul className="mt-2 mb-4 flex flex-col gap-2 lg:mb-0 lg:mt-0 lg:flex-row lg:items-center lg:gap-6">
       <Typography as="li" color="blue-gray" className="p-1 font-normal">
-        <NavLink
+        <a
           className="hover-links flex items-center"
-          to="/"
-          onClick={closeNav}
+          href="#home"
+          onClick={(e) => handleScroll(e, "home")}
         >
           Home
-        </NavLink>
+        </a>
       </Typography>
       <Typography as="li" color="blue-gray" className="p-1 font-normal">
-        <NavLink
-          href="#"
+        <a
           className="hover-links flex items-center"
-          to="/about"
-          onClick={closeNav}
+          href="#about"
+          onClick={(e) => handleScroll(e, "about")}
         >
           About
-        </NavLink>
+        </a>
       </Typography>
       <Typography as="li" color="blue-gray" className="p-1 font-normal">
-        <NavLink
-          href="#"
+        <a
           className="hover-links flex items-center"
-          to="/testimonials"
-          onClick={closeNav}
+          href="#testimonial"
+          onClick={(e) => handleScroll(e, "testimonial")}
         >
           Testimonials
-        </NavLink>
+        </a>
       </Typography>
       <Typography as="li" color="blue-gray" className="p-1 font-normal">
-        <NavLink
-          href="#"
+        <a
           className="hover-links flex items-center"
-          to="/contact"
-          onClick={closeNav}
+          href="#contact"
+          onClick={(e) => handleScroll(e, "contact")}
         >
           Contact
-        </NavLink>
+        </a>
       </Typography>
       <Typography as="li" color="blue-gray" className="p-1 font-normal">
         <NavLink
           className="hover-links flex items-center"
-          to="/upload" // Link to the upload page
+          to="/upload"
           onClick={closeNav}
         >
           Upload Hospitals
@@ -114,7 +133,7 @@ export function Nav() {
 
   return (
     <div className="max-h-[768px] w-[calc(100%)]" ref={navRef}>
-      <Navbar className="sticky top-0 z-10 h-max max-w-full rounded-lg px-4 py-2 lg:px-12 lg:py-4">
+      <Navbar className="fixed top-0 left-0 right-0 z-10 h-max max-w-full rounded-lg px-4 py-2 lg:px-12 lg:py-4">
         <div className="flex justify-between items-center text-blue-500">
           <Typography className="mr-16 cursor-pointer py-1.5 lg:font-bold font-black text-xl">
             HealthCare Finder
@@ -123,9 +142,6 @@ export function Nav() {
           <div className="flex items-center gap-x-4">
             {user ? (
               <div className="flex items-center gap-2">
-                {/* <Typography className="font-semibold text-blue-700">
-                  Welcome, {getFirstName(user.displayName)}
-                </Typography> */}
                 <Button
                   variant="outlined"
                   size="sm"
@@ -152,7 +168,7 @@ export function Nav() {
           <IconButton
             variant="text"
             className="ml-auto h-6 w-6 text-inherit hover:bg-transparent focus:bg-transparent active:bg-transparent lg:hidden"
-            ripple={false}
+            ripple
             onClick={() => setOpenNav(!openNav)}
           >
             {openNav ? (
@@ -202,18 +218,18 @@ export function Nav() {
                 Sign Out
               </Button>
             ) : (
-              <NavLink to="/signin" className="w-full">
-                <Button
-                  fullWidth
-                  variant="gradient"
-                  size="lg"
-                  color="blue"
-                  className="sign-in-mobile flex items-center justify-center h-10"
-                  onClick={closeNav}
-                >
-                  Sign In
-                </Button>
-              </NavLink>
+                <NavLink to="/signin" className="w-full">
+                  <Button
+                    fullWidth
+                    variant="gradient"
+                    size="lg"
+                    color="blue"
+                    className="sign-in-mobile flex items-center justify-center h-10"
+                    onClick={closeNav}
+                  >
+                    Sign In
+                  </Button>
+                </NavLink>
             )}
           </div>
         </MobileNav>

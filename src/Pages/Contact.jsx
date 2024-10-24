@@ -52,7 +52,7 @@ export function Contact() {
         </Typography>
         <div className="grid grid-cols-1 gap-x-12 gap-y-6 lg:grid-cols-2 items-start justify-items-center">
           <img
-            src="/src/assets/customer.png"
+            src="../assets/customer.png"
             alt="map"
             className="h-full lg:max-h-[510px] rounded-md"
           />

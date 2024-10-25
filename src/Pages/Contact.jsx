@@ -2,6 +2,7 @@ import React from "react";
 import { Button, Input, Textarea, Typography } from "@material-tailwind/react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import '../assets/customer.png'
 
 export function Contact() {
   const [result, setResult] = React.useState("");

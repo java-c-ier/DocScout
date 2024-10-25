@@ -50,7 +50,7 @@ function Testimonial() {
         autoFill
       >
         <div className="flex gap-32">
-          <Card color="brown" className="w-full max-w-[25rem] px-4">
+          <Card color="blue" className="w-full max-w-[25rem] px-4">
             <CardHeader
               color="transparent"
               floated={false}
@@ -61,12 +61,12 @@ function Testimonial() {
                 size="lg"
                 variant="circular"
                 src="https://images.unsplash.com/photo-1633332755192-727a05c4013d?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1480&q=80"
-                alt="tania andrew"
+                alt="Evan Stone"
               />
               <div className="flex w-full flex-col gap-0.5">
                 <div className="flex items-center justify-between">
-                  <Typography variant="h5" color="blue-gray">
-                    Tania Andrew
+                  <Typography variant="h5" color="white">
+                    Evan Stone
                   </Typography>
                   <div className="5 flex items-center gap-0">
                     <StarIcon />
@@ -76,9 +76,6 @@ function Testimonial() {
                     <StarIcon />
                   </div>
                 </div>
-                <Typography color="blue-gray">
-                  Frontend Lead @ Google
-                </Typography>
               </div>
             </CardHeader>
             <CardBody className="mb-6 p-0">
@@ -89,7 +86,7 @@ function Testimonial() {
               </Typography>
             </CardBody>
           </Card>
-          <Card color="green" className="w-full max-w-[25rem] px-4">
+          <Card color="blue" className="w-full max-w-[25rem] px-4">
             <CardHeader
               color="transparent"
               floated={false}
@@ -100,24 +97,19 @@ function Testimonial() {
                 size="lg"
                 variant="circular"
                 src="https://images.unsplash.com/photo-1485178575877-1a13bf489dfe?q=80&w=2001&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
-                alt="tania andrew"
+                alt="Tania Andrew"
               />
               <div className="flex w-full flex-col gap-0.5">
                 <div className="flex items-center justify-between">
-                  <Typography variant="h5" color="blue-gray">
+                  <Typography variant="h5" color="white">
                     Tania Andrew
                   </Typography>
                   <div className="5 flex items-center gap-0">
                     <StarIcon />
                     <StarIcon />
                     <StarIcon />
-                    <StarIcon />
-                    <StarIcon />
                   </div>
                 </div>
-                <Typography color="blue-gray">
-                  Frontend Lead @ Google
-                </Typography>
               </div>
             </CardHeader>
             <CardBody className="mb-6 p-0">
@@ -128,7 +120,7 @@ function Testimonial() {
               </Typography>
             </CardBody>
           </Card>
-          <Card color="yellow" className="w-full max-w-[25rem] px-4">
+          <Card color="blue" className="w-full max-w-[25rem] px-4">
             <CardHeader
               color="transparent"
               floated={false}
@@ -139,23 +131,20 @@ function Testimonial() {
                 size="lg"
                 variant="circular"
                 src="https://images.unsplash.com/photo-1532170579297-281918c8ae72?q=80&w=1784&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+                alt="Maya Lane"
               />
               <div className="flex w-full flex-col gap-0.5">
                 <div className="flex items-center justify-between">
-                  <Typography variant="h5" color="blue-gray">
-                    Tania Andrew
+                  <Typography variant="h5" color="white">
+                    Maya Lane
                   </Typography>
                   <div className="5 flex items-center gap-0">
                     <StarIcon />
                     <StarIcon />
                     <StarIcon />
                     <StarIcon />
-                    <StarIcon />
                   </div>
                 </div>
-                <Typography color="blue-gray">
-                  Frontend Lead @ Google
-                </Typography>
               </div>
             </CardHeader>
             <CardBody className="mb-6 p-0">
@@ -166,7 +155,7 @@ function Testimonial() {
               </Typography>
             </CardBody>
           </Card>
-          <Card color="red" className="w-full max-w-[25rem] px-4">
+          <Card color="blue" className="w-full max-w-[25rem] px-4">
             <CardHeader
               color="transparent"
               floated={false}
@@ -177,12 +166,12 @@ function Testimonial() {
                 size="lg"
                 variant="circular"
                 src="https://images.unsplash.com/photo-1556157382-97eda2d62296?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
-                alt="tania andrew"
+                alt="Liam Ross"
               />
               <div className="flex w-full flex-col gap-0.5">
                 <div className="flex items-center justify-between">
-                  <Typography variant="h5" color="blue-gray">
-                    Tania Andrew
+                  <Typography variant="h5" color="white">
+                    Liam Ross
                   </Typography>
                   <div className="5 flex items-center gap-0">
                     <StarIcon />
@@ -192,9 +181,6 @@ function Testimonial() {
                     <StarIcon />
                   </div>
                 </div>
-                <Typography color="blue-gray">
-                  Frontend Lead @ Google
-                </Typography>
               </div>
             </CardHeader>
             <CardBody className="mb-6 p-0">
@@ -216,24 +202,20 @@ function Testimonial() {
                 size="lg"
                 variant="circular"
                 src="https://images.unsplash.com/photo-1699899662121-882a20f9bea6?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
-                alt="tania andrew"
+                alt="Ava Brooks"
               />
               <div className="flex w-full flex-col gap-0.5">
                 <div className="flex items-center justify-between">
-                  <Typography variant="h5" color="blue-gray">
-                    Tania Andrew
+                  <Typography variant="h5" color="white">
+                  Ava Brooks
                   </Typography>
                   <div className="5 flex items-center gap-0">
                     <StarIcon />
                     <StarIcon />
                     <StarIcon />
                     <StarIcon />
-                    <StarIcon />
                   </div>
                 </div>
-                <Typography color="blue-gray">
-                  Frontend Lead @ Google
-                </Typography>
               </div>
             </CardHeader>
             <CardBody className="mb-6 p-0">

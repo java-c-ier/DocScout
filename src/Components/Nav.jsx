@@ -133,10 +133,10 @@ export function Nav() {
 
   return (
     <div className="max-h-[768px] w-[calc(100%)]" ref={navRef}>
-      <Navbar className="fixed top-0 left-0 right-0 z-10 h-max max-w-full rounded-lg px-4 py-2 lg:px-12 lg:py-4">
+      <Navbar className="fixed top-0 left-0 right-0 z-10 h-max max-w-full rounded-lg px-4 py-2 lg:px-12 lg:py-3">
         <div className="flex justify-between items-center text-blue-500">
-          <Typography className="mr-16 cursor-pointer py-1.5 lg:font-bold font-black text-xl">
-            HealthCare Finder
+          <Typography className="mr-16 cursor-pointer py-1.5 lg:font-bold font-black text-[135%]">
+            DocScout
           </Typography>
           <div className="mr-20 hidden lg:block">{navList}</div>
           <div className="flex items-center gap-x-4">

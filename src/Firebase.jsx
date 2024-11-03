@@ -1,6 +1,3 @@
-// require('dotenv').config();
-// const key = process.env.myAPIKey;
-
 import { initializeApp } from "firebase/app";
 import { getFirestore, doc, setDoc } from "firebase/firestore";
 
@@ -18,26 +15,29 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 // Function to add hospital data to Firestore
-export const addHospital = async (hospital) => {
-  const sanitizedName = hospital.Name.trim().replace(/\s+/g, '_').replace(/[^\w-]/g, '');
-  const hospitalRef = doc(db, "Odisha/Cuttack/Hospitals", sanitizedName);
-  
+export const addHospital = async (hospital, csvFileName) => {
+  // Ensure csvFileName is defined and remove file extension if present
+  const districtName = csvFileName ? csvFileName.replace(/\.[^/.]+$/, "").trim() : 'Unknown District';
+
+  // Check if hospital.Name is defined and sanitize it
+  const sanitizedName = hospital.Name ? hospital.Name.trim().replace(/\s+/g, '_').replace(/[^\w-]/g, '') : 'Unknown Hospital';
+
+  // Set reference to Firestore collection
+  const hospitalRef = doc(db, `Odisha/${districtName}/Hospitals`, sanitizedName);
+
   try {
     await setDoc(hospitalRef, {
-      Name: hospital.Name ? hospital.Name.trim() : '',
+      Name: hospital.Name ? hospital.Name.trim() : 'NA',
       Website: hospital.Website ? hospital.Website.trim() : '',
       Rating: hospital.Rating ? parseFloat(hospital.Rating) : 0,
       Type: hospital.Type ? hospital.Type.trim() : '',
-      Contact: hospital.Contact ? hospital.Contact.trim() : '',
+      Contact: hospital.Contact ? hospital.Contact.trim() : 'NA',
       'Google Map Link': hospital.GoogleMapLink ? hospital.GoogleMapLink.trim() : '',
     });
-    console.log(`${hospital.Name} added successfully!`);
+    console.log(`${hospital.Name || 'Unknown'} added successfully to ${districtName}!`);
   } catch (error) {
-    console.error(`Error adding ${hospital.Name}:`, error);
+    console.error(`Error adding ${hospital.Name || 'Unknown'} to ${districtName}:`, error);
   }
 };
-
-
-
 
 export { app, db };

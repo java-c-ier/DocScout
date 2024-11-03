@@ -44,6 +44,7 @@ function Hero() {
   const [filteredDistricts, setFilteredDistricts] = useState([]);
   const [hospitalList, setHospitalList] = useState([]);
   const searchBoxRef = useRef(null);
+  const hospitalListRef = useRef(null);
 
   const handleSearch = (e) => {
     const query = e.target.value;
@@ -73,12 +74,20 @@ function Hero() {
         "Hospitals"
       );
       const snapshot = await getDocs(hospitalsCollection);
-      if (!snapshot.empty) {
-        const hospitalsData = snapshot.docs.map((doc) => doc.data());
-        setHospitalList(hospitalsData);
-      } else {
-        console.log(`No hospitals found for ${searchInput}`);
-        setHospitalList([]);
+
+      const hospitalsData = snapshot.empty
+        ? []
+        : snapshot.docs.map((doc) => doc.data());
+      setHospitalList(hospitalsData);
+
+      if (hospitalListRef.current) {
+        const yOffset = -70; // Adjust this value based on your navbar height
+        const yPosition =
+          hospitalListRef.current.getBoundingClientRect().top +
+          window.pageYOffset +
+          yOffset;
+
+        window.scrollTo({ top: yPosition, behavior: "smooth" });
       }
     } catch (error) {
       console.error("Error fetching hospitals:", error);
@@ -122,8 +131,8 @@ function Hero() {
             <div className="search-box w-[60%]">
               <Input
                 icon={
-                  <button onClick={handleSearchButtonClick}>
-                    <TbSearch />
+                  <button onClick={handleSearchButtonClick} aria-label="Search">
+                    <TbSearch className="text-blue-600" />
                   </button>
                 }
                 label="Enter Location"
@@ -146,23 +155,33 @@ function Hero() {
         <div className="hero-image-section">
           <img className="hero-image1" src={Doctor} alt="Doctor" />
         </div>
-
       </div>
       {/* Hospital List */}
       {hospitalList.length > 0 && (
-        <div className="bg-blue-50 hospital-list grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 pt-6 px-4">
+        <div
+          ref={hospitalListRef}
+          className="bg-blue-50 hospital-list grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 pt-6 pb-3 px-4"
+        >
           {hospitalList.map((hospital, index) => (
-            <div key={index} className="bg-white p-4 mb-4 border rounded-lg shadow">
+            <div
+              key={index}
+              className="bg-white p-4 mb-4 border rounded-lg shadow hover:shadow-lg transition-shadow"
+            >
               <h3 className="text-lg font-bold">{hospital.Name}</h3>
-              <p className="overflow-hidden">
+              <p>
                 Website:{" "}
-                <a
-                  href={hospital.Website}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  {hospital.Website}
-                </a>
+                {hospital.Website ? (
+                  <a
+                    href={hospital.Website}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600"
+                  >
+                    Link
+                  </a>
+                ) : (
+                  "NA"
+                )}
               </p>
               <p>Rating: {hospital.Rating}</p>
               <p>Type: {hospital.Type}</p>
@@ -172,7 +191,8 @@ function Hero() {
                 <a
                   href={hospital["Google Map Link"]}
                   target="_blank"
-                  // rel="noopener noreferrer"
+                  rel="noopener noreferrer"
+                  className="text-blue-600"
                 >
                   View Location
                 </a>

@@ -204,6 +204,7 @@ function Hero() {
         </div>
       )}
       <ToastContainer
+        toastClassName="toast-container"
         position="top-center"
         autoClose={4000}
         hideProgressBar

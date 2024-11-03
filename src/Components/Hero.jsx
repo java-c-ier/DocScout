@@ -5,6 +5,8 @@ import { Input } from "@material-tailwind/react";
 import { TbSearch } from "react-icons/tb";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "../Firebase";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import SearchSuggestions from "./SearchSuggestions"; // Import the new component
 
 function Hero() {
@@ -98,7 +100,7 @@ function Hero() {
     if (districts.includes(searchInput)) {
       fetchHospitals();
     } else {
-      alert("Please enter a valid district");
+      toast.error("Please enter a valid district!");
     }
   };
 
@@ -201,6 +203,19 @@ function Hero() {
           ))}
         </div>
       )}
+      <ToastContainer
+        position="top-center"
+        autoClose={4000}
+        hideProgressBar
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss={false}
+        draggable
+        pauseOnHover
+        theme="colored"
+        transition:Bounce
+      />
     </div>
   );
 }

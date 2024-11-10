@@ -40,7 +40,16 @@ function Testimonial() {
   const isLargeScreen = windowWidth > 900;
 
   return (
-    <div className="pb-10 pt-[70px]" id="testimonial">
+    <div className="pb-10 pt-[55px]" id="testimonial">
+      <div className="text-center">
+      <Typography
+          variant="h1"
+          color="black"
+          className="mb-10 !text-3xl lg:!text-5xl"
+        >
+         Testimonials
+        </Typography>
+      </div>
       <Marquee
         pauseOnClick
         gradient={isLargeScreen}
@@ -55,7 +64,7 @@ function Testimonial() {
               color="transparent"
               floated={false}
               shadow={false}
-              className="mx-0 flex items-center gap-4 pt-0 pb-8"
+              className="mx-0 flex items-center gap-4 pt-0 pb-4"
             >
               <Avatar
                 size="lg"
@@ -80,9 +89,7 @@ function Testimonial() {
             </CardHeader>
             <CardBody className="mb-6 p-0">
               <Typography>
-                &quot;I found solution to all my design needs from Creative Tim.
-                I use them as a freelancer in my hobby projects for fun! And its
-                really affordable, very humble guys !!!&quot;
+                &quot;I recently moved to a new city, and this site made it incredibly easy to find the best hospitals near me. The search was fast, and the results were reliable, saving me a lot of time and stress!&quot;
               </Typography>
             </CardBody>
           </Card>
@@ -91,7 +98,7 @@ function Testimonial() {
               color="transparent"
               floated={false}
               shadow={false}
-              className="mx-0 flex items-center gap-4 pt-0 pb-8"
+              className="mx-0 flex items-center gap-4 pt-0 pb-4"
             >
               <Avatar
                 size="lg"
@@ -108,15 +115,14 @@ function Testimonial() {
                     <StarIcon />
                     <StarIcon />
                     <StarIcon />
+                    <StarIcon />
                   </div>
                 </div>
               </div>
             </CardHeader>
             <CardBody className="mb-6 p-0">
               <Typography>
-                &quot;Tailwind has streamlined my workflow! As a freelance
-                designer, I love its utility-first approach. Super customizable,
-                efficient, and perfect for quick projects!&quot;
+                &quot;I’ve always struggled to find quality hospitals for specific needs, but this site made the process effortless. It quickly showed me highly-rated options based on my location. A real time-saver!&quot;
               </Typography>
             </CardBody>
           </Card>
@@ -125,7 +131,7 @@ function Testimonial() {
               color="transparent"
               floated={false}
               shadow={false}
-              className="mx-0 flex items-center gap-4 pt-0 pb-8"
+              className="mx-0 flex items-center gap-4 pt-0 pb-4"
             >
               <Avatar
                 size="lg"
@@ -149,9 +155,7 @@ function Testimonial() {
             </CardHeader>
             <CardBody className="mb-6 p-0">
               <Typography>
-                &quot;Figma is my go-to design tool! It’s intuitive,
-                collaborative, and works seamlessly across devices. It’s made my
-                freelance work much more efficient!&quot;
+                &quot;I was in urgent need of medical care and had no idea where to go. This website provided accurate, top-rated hospitals nearby, which helped me make a quick decision.&quot;
               </Typography>
             </CardBody>
           </Card>
@@ -160,7 +164,7 @@ function Testimonial() {
               color="transparent"
               floated={false}
               shadow={false}
-              className="mx-0 flex items-center gap-4 pt-0 pb-8"
+              className="mx-0 flex items-center gap-4 pt-0 pb-4"
             >
               <Avatar
                 size="lg"
@@ -185,9 +189,7 @@ function Testimonial() {
             </CardHeader>
             <CardBody className="mb-6 p-0">
               <Typography>
-                &quot;CodeSandbox is amazing for quick prototyping. I use it for
-                small side projects, and it’s fast, responsive, and easy to
-                share with clients!&quot;
+                &quot;I travel often for work, and this site has been a game-changer. It instantly shows me trusted hospitals nearby. Perfect for anyone needing quick and reliable healthcare options.&quot;
               </Typography>
             </CardBody>
           </Card>
@@ -196,7 +198,7 @@ function Testimonial() {
               color="transparent"
               floated={false}
               shadow={false}
-              className="mx-0 flex items-center gap-4 pt-0 pb-8"
+              className="mx-0 flex items-center gap-4 pt-0 pb-4"
             >
               <Avatar
                 size="lg"
@@ -220,9 +222,7 @@ function Testimonial() {
             </CardHeader>
             <CardBody className="mb-6 p-0">
               <Typography>
-                &quot;As a web designer, Webflow has revolutionized how I build
-                websites. It's perfect for hobby projects, and their support
-                team is awesome!&quot;
+                &quot;I love how this website doesn’t just show nearby hospitals—it also gives detailed reviews and important info. It’s my go-to platform for finding the right healthcare providers.&quot;
               </Typography>
             </CardBody>
           </Card>

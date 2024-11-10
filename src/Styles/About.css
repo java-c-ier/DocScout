@@ -18,7 +18,8 @@
 }
 /* Text */
 .about-text-content {
-    width: 50%;
+    width: 45%;
+    text-align: justify;
 }
 .about-title {
     font-family: 'Poppins', sans-serif;
@@ -39,7 +40,7 @@
     bottom: -12px;
 }
 .about-description {
-    margin: 32px 0;
+    margin: 32px 6px;
     color: #4d4b4b;
     font-family: 'Rubik', sans-serif;
     font-size: 18px;

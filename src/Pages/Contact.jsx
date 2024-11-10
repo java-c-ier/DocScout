@@ -37,11 +37,11 @@ export function Contact() {
   };
 
   return (
-    <section className="px-8 pt-16" id="contact">
+    <section className="px-8 pt-14" id="contact">
       <div className="container mx-auto text-center">
         <Typography
           variant="h1"
-          color="blue-gray"
+          color="black"
           className="mb-4 !text-3xl lg:!text-5xl"
         >
           We&apos;re Here to Help

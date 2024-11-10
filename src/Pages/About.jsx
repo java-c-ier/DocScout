@@ -15,28 +15,29 @@ function About() {
           <span>About Us</span>
         </h3>
         <p className="about-description">
-          Welcome to Health Plus, your trusted partner for accessible and
-          personalized healthcare. Our expert doctors offer online consultations
-          and specialized services, prioritizing your well-being. Join us on
-          this journey towards a healthier you.
+          Welcome to DocScout, your trusted platform for finding top hospitals
+          tailored to your location. Simply enter your location to access a
+          curated list of hospitals and healthcare facilities nearby. Join us in building a
+          community focused on accessible, reliable, and personalized healthcare
+          for all.
         </p>
 
         <h4 className="about-text-title">Your Solutions</h4>
 
         <SolutionStep
-          title="Choose a Specialist"
-          description="Find your perfect specialist and book with ease at Health Plus. Expert doctors prioritize your health, offering tailored care."
+          title="Choose a Hospital"
+          description="Find top hospitals near you by entering the location with DocScout. Read reviews, choose with confidence, and prioritize your health."
         />
 
         <SolutionStep
-          title="Make a Schedule"
-          description="Choose the date and time that suits you best, and let our dedicated team of medical professionals ensure your well-being with personalized care."
+          title="Get its location"
+          description="Get the link to your hospital's location from Google Maps and get its route from your location when redirected to Google Maps."
         />
 
-        <SolutionStep
+        {/* <SolutionStep
           title="Get Your Solutions"
           description="Our experienced doctors and specialists are here to provide expert advice and personalized treatment plans, helping you achieve your best possible health."
-        />
+        /> */}
       </div>
     </div>
   );

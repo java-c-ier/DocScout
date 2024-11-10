@@ -122,11 +122,11 @@ function Hero() {
       <div className="hero-section">
         <div className="text-section">
           <p className="text-headline">❤️ Health comes first</p>
-          <h2 className="text-title">Find your Doctor from your phone.</h2>
+          <h2 className="text-title">Find hospitals from your phone.</h2>
           <p className="text-descritpion">
-            Talk to online doctors and get medical advice, online prescriptions,
-            refills and medical notes within minutes. On-demand healthcare
-            services at your fingertips.
+            Access accurate, up-to-date healthcare information tailored to your
+            needs. Search providers by location, specialty, and ratings for
+            enhanced healthcare decision-making and accessibility.
           </p>
 
           <div className="search-area w-full flex relative" ref={searchBoxRef}>

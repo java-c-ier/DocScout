@@ -7,46 +7,49 @@ import { collection, getDocs } from "firebase/firestore";
 import { db } from "../Firebase";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import SearchSuggestions from "./SearchSuggestions"; // Import the new component
+import SearchSuggestions from "./SearchSuggestions";
+import Hospitals from "./Hospitals"; // Import the Hospitals component
 
 function Hero() {
   const districts = [
     "Angul",
+    "Balangir",
+    "Balasore",
+    "Bargarh",
+    "Bhadrak",
     "Boudh",
     "Cuttack",
-    "Dhenkanal",
-    "Jagatsinghpur",
-    "Jajpur",
-    "Kendrapada",
-    "Khordha",
-    "Nayagarh",
-    "Puri",
-    "Balasore",
-    "Bhadrak",
     "Deogarh",
-    "Jharsuguda",
-    "Keonjhar",
-    "Mayurbhanj",
-    "Sambalpur",
-    "Sundargarh",
-    "Bargarh",
-    "Balangir",
+    "Dhenkanal",
     "Gajapati",
     "Ganjam",
+    "Jagatsinghpur",
+    "Jajpur",
+    "Jharsuguda",
     "Kalahandi",
     "Kandhamal",
+    "Kendrapada",
+    "Keonjhar",
+    "Khordha",
     "Koraput",
     "Malkangiri",
+    "Mayurbhanj",
     "Nabarangpur",
+    "Nayagarh",
     "Nuapada",
+    "Puri",
     "Rayagada",
-    "Sonepur",
+    "Sambalpur",
+    "Subarnapur",
+    "Sundargarh",
   ];
+
   const [searchInput, setSearchInput] = useState("");
   const [filteredDistricts, setFilteredDistricts] = useState([]);
   const [hospitalList, setHospitalList] = useState([]);
   const searchBoxRef = useRef(null);
   const hospitalListRef = useRef(null);
+  const [hasSearched, setHasSearched] = useState(false);
 
   const handleSearch = (e) => {
     const query = e.target.value;
@@ -79,11 +82,11 @@ function Hero() {
 
       const hospitalsData = snapshot.empty
         ? []
-        : snapshot.docs.map((doc) => doc.data());
+        : snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
       setHospitalList(hospitalsData);
 
       if (hospitalListRef.current) {
-        const yOffset = -70; // Adjust this value based on your navbar height
+        const yOffset = -70;
         const yPosition =
           hospitalListRef.current.getBoundingClientRect().top +
           window.pageYOffset +
@@ -98,6 +101,7 @@ function Hero() {
 
   const handleSearchButtonClick = () => {
     if (districts.includes(searchInput)) {
+      setHasSearched(true); // Indicate that a search has been made
       fetchHospitals();
     } else {
       toast.error("Please enter a valid district!");
@@ -123,10 +127,10 @@ function Hero() {
         <div className="text-section">
           <p className="text-headline">❤️ Health comes first</p>
           <h2 className="text-title">Find hospitals from your phone.</h2>
-          <p className="text-descritpion">
+          <p className="text-description">
             Access accurate, up-to-date healthcare information tailored to your
-            needs. Search providers by location, specialty, and ratings for
-            enhanced healthcare decision-making and accessibility.
+            needs. Search providers by location, specialty, and ratings for 
+            enhanced healthcare decision making and accessibility.
           </p>
 
           <div className="search-area w-full flex relative" ref={searchBoxRef}>
@@ -141,11 +145,9 @@ function Hero() {
                 className="bg-white text-[17px]"
                 size="lg"
                 color="blue"
-                value={searchInput}
+                value={searchInput} 
                 onChange={handleSearch}
               />
-
-              {/* Use SearchSuggestions component here */}
               <SearchSuggestions
                 filteredDistricts={filteredDistricts}
                 onSelectDistrict={handleSelectDistrict}
@@ -158,51 +160,12 @@ function Hero() {
           <img className="hero-image1" src={Doctor} alt="Doctor" />
         </div>
       </div>
-      {/* Hospital List */}
-      {hospitalList.length > 0 && (
-        <div
-          ref={hospitalListRef}
-          className="bg-blue-50 hospital-list grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 pt-6 pb-3 px-4"
-        >
-          {hospitalList.map((hospital, index) => (
-            <div
-              key={index}
-              className="bg-white p-4 mb-4 border rounded-lg shadow hover:shadow-lg transition-shadow"
-            >
-              <h3 className="text-lg font-bold">{hospital.Name}</h3>
-              <p>
-                Website:{" "}
-                {hospital.Website ? (
-                  <a
-                    href={hospital.Website}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600"
-                  >
-                    Link
-                  </a>
-                ) : (
-                  "NA"
-                )}
-              </p>
-              <p>Rating: {hospital.Rating}</p>
-              <p>Type: {hospital.Type}</p>
-              <p>Contact: {hospital.Contact}</p>
-              <p>
-                Google Map:{" "}
-                <a
-                  href={hospital["Google Map Link"]}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-600"
-                >
-                  View Location
-                </a>
-              </p>
-            </div>
-          ))}
-        </div>
-      )}
+
+      {/* Hospital List Display using Hospitals Component */}
+      <div ref={hospitalListRef} className={`${hospitalList.length > 0 ? "px-4 py-6" : ""}`}>
+        <Hospitals hospitals={hospitalList} hasSearched={hasSearched} />
+      </div>
+
       <ToastContainer
         toastClassName="toast-container"
         position="top-center"
@@ -215,7 +178,6 @@ function Hero() {
         draggable
         pauseOnHover
         theme="colored"
-        transition:Bounce
       />
     </div>
   );

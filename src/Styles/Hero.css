@@ -18,7 +18,7 @@
     font-family: 'Rubik', sans-serif;
     font-size: 22px;
     font-weight: bold;
-    letter-spacing: .5px;
+    letter-spacing: 0.5px;
 }
 .text-title {
     width: 500px;
@@ -28,14 +28,15 @@
     letter-spacing: .2px;
     font-weight: bold;
 }
-.text-descritpion {
+.text-description {
     width: 430px;
     margin: 32px 0;
     color: rgb(77, 75, 75);
     font-family: 'Rubik', sans-serif;
     font-size: 18px;
     letter-spacing: 1.5px;
-    line-height: 1.5rem;
+    word-spacing: 2px;
+    line-height: 1.8rem;
     text-align: justify;
 }
 

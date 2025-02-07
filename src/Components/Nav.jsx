@@ -6,7 +6,7 @@ import {
   Button,
   IconButton,
 } from "@material-tailwind/react";
-import { NavLink } from "react-router-dom";
+import { NavLink } from "react-router";
 import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
 import "../Styles/Nav.css";
 

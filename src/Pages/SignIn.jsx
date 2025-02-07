@@ -4,7 +4,7 @@ import { app } from './../Firebase';
 
 import { Typography, Input, Button } from "@material-tailwind/react";
 import { EyeSlashIcon, EyeIcon } from "@heroicons/react/24/solid";
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router";
 
 const auth = getAuth(app);
 const googleProvider = new GoogleAuthProvider();

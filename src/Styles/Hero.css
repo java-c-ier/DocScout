@@ -125,6 +125,7 @@
   }
   .text-section {
     width: 100%;
+    padding: 0;
   }
   .text-headline {
     margin: 0 2% 12px;

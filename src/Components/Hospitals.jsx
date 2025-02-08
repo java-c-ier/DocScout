@@ -34,7 +34,10 @@ const Hospitals = ({ hospitals, hasSearched }) => {
 
   const indexOfLastHospital = activePage * hospitalsPerPage;
   const indexOfFirstHospital = indexOfLastHospital - hospitalsPerPage;
-  const currentHospitals = hospitals.slice(indexOfFirstHospital, indexOfLastHospital);
+  const currentHospitals = hospitals.slice(
+    indexOfFirstHospital,
+    indexOfLastHospital
+  );
 
   const next = () => {
     if (activePage < totalPages) setActivePage(activePage + 1);
@@ -49,7 +52,10 @@ const Hospitals = ({ hospitals, hasSearched }) => {
     color: "gray",
     onClick: () => setActivePage(index),
     className: "rounded-full",
-    style: activePage === index ? { backgroundColor: "#2294f2", color: "white" } : {},
+    style:
+      activePage === index
+        ? { backgroundColor: "#2294f2", color: "white" }
+        : {},
   });
 
   if (!hasSearched || !isDataFetched) {
@@ -61,7 +67,7 @@ const Hospitals = ({ hospitals, hasSearched }) => {
   }
 
   return (
-    <div className={`overflow-x-auto w-full ${hospitals.length > 0 ? '' : ''}`}>
+    <div className={`overflow-x-auto w-full ${hospitals.length > 0 ? "" : ""}`}>
       <table className="min-w-full bg-white border border-gray-300 shadow-md rounded-lg overflow-hidden">
         <thead>
           <tr className="bg-gray-200 text-gray-700">
@@ -71,32 +77,52 @@ const Hospitals = ({ hospitals, hasSearched }) => {
             <th className="px-4 py-2 text-center">Rating</th>
             <th className="px-4 py-2 text-center">Website</th>
             <th className="px-4 py-2 text-center">Google Map Link</th>
+            <th className="px-4 py-2 text-center">Review</th>
           </tr>
         </thead>
         <tbody>
           {currentHospitals.map((hospital) => (
-            <tr key={hospital.id} className="border-t border-gray-200 hover:bg-gray-50">
-              <td className="px-4 py-3">{hospital.Name || 'N/A'}</td>
-              <td className="px-4 py-3 text-center">{hospital.Contact || 'N/A'}</td>
-              <td className="px-4 py-3 text-center">{hospital.Type || 'N/A'}</td>
+            <tr
+              key={hospital.id}
+              className="border-t border-gray-300 hover:bg-gray-100">
+              <td className="px-4 py-3">{hospital.Name || "N/A"}</td>
+              <td className="px-4 py-3 text-center">
+                {hospital.Contact || "N/A"}
+              </td>
+              <td className="px-4 py-3 text-center">
+                {hospital.Type || "N/A"}
+              </td>
               <td className="px-4 py-3 text-center">{hospital.Rating || 0}</td>
               <td className="px-4 py-3 text-center">
                 {hospital.Website ? (
-                  <a href={hospital.Website} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
+                  <a
+                    href={hospital.Website}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-500 hover:underline">
                     Visit
                   </a>
                 ) : (
-                  'N/A'
+                  "N/A"
                 )}
               </td>
               <td className="px-4 py-2 text-center">
-                {hospital['Google Map Link'] ? (
-                  <a href={hospital['Google Map Link']} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
+                {hospital["Google Map Link"] ? (
+                  <a
+                    href={hospital["Google Map Link"]}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-500 hover:underline">
                     View Map
                   </a>
                 ) : (
                   'N/A'
                 )}
+              </td>
+              <td className="text-center  ">
+                <Button className="bg-blue-500 text-white px-3.5 py-1 w-fit mx-auto rounded-full hover:scale-110 transition-all text-sm">
+                  Review
+                </Button>
               </td>
             </tr>
           ))}
@@ -105,15 +131,25 @@ const Hospitals = ({ hospitals, hasSearched }) => {
 
       {totalPages > 1 && (
         <div className="flex justify-center mt-4 gap-4">
-          <Button variant="text" className="flex items-center gap-2 rounded-full" onClick={prev} disabled={activePage === 1}>
+          <Button
+            variant="text"
+            className="flex items-center gap-2 rounded-full"
+            onClick={prev}
+            disabled={activePage === 1}>
             <ArrowLeftIcon strokeWidth={2} className="h-4 w-4" /> Previous
           </Button>
           <div className="flex items-center gap-2">
             {Array.from({ length: totalPages }, (_, index) => (
-              <IconButton key={index + 1} {...getItemProps(index + 1)}>{index + 1}</IconButton>
+              <IconButton key={index + 1} {...getItemProps(index + 1)}>
+                {index + 1}
+              </IconButton>
             ))}
           </div>
-          <Button variant="text" className="flex items-center gap-2 rounded-full" onClick={next} disabled={activePage === totalPages}>
+          <Button
+            variant="text"
+            className="flex items-center gap-2 rounded-full"
+            onClick={next}
+            disabled={activePage === totalPages}>
             Next <ArrowRightIcon strokeWidth={2} className="h-4 w-4" />
           </Button>
         </div>

@@ -1,17 +1,32 @@
 import React, { useState, useEffect } from "react";
-import { Button, IconButton } from "@material-tailwind/react";
+import {
+  Button,
+  IconButton,
+  Dialog,
+  DialogHeader,
+  DialogBody,
+  DialogFooter,
+  Input,
+  Textarea,
+} from "@material-tailwind/react";
 import { ArrowRightIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
+import { db, addReview } from "../Firebase";
+import { collection, getDocs, doc, getDoc } from "firebase/firestore";
 
 const Hospitals = ({ hospitals, hasSearched }) => {
   const [activePage, setActivePage] = useState(1);
   const [showNoHospitalsMessage, setShowNoHospitalsMessage] = useState(false);
   const [isDataFetched, setIsDataFetched] = useState(false);
+  const [openReviewDialog, setOpenReviewDialog] = useState(false);
+  const [selectedHospital, setSelectedHospital] = useState(null);
+  const [reviewText, setReviewText] = useState("");
+  const [reviewerName, setReviewerName] = useState("");
 
   useEffect(() => {
     const fetchHospitals = async () => {
       if (hasSearched) {
         setIsDataFetched(false);
-        await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulate fetch delay
+        await new Promise((resolve) => setTimeout(resolve, 1000));
         setIsDataFetched(true);
       } else {
         setIsDataFetched(false);
@@ -66,6 +81,64 @@ const Hospitals = ({ hospitals, hasSearched }) => {
     return <p className="text-center text-gray-500">No hospitals available.</p>;
   }
 
+  const handleOpenReviewDialog = async (hospital) => {
+    try {
+      const formattedHospitalName = hospital.Name.replace(/\s+/g, "_");
+      const stateRef = collection(db, "Odisha");
+      const districtsSnapshot = await getDocs(stateRef);
+
+      let foundDistrict = null;
+
+      for (const districtDoc of districtsSnapshot.docs) {
+        const district = districtDoc.id;
+        const hospitalRef = doc(db, `Odisha/${district}/Hospitals/${formattedHospitalName}`);
+        const hospitalDoc = await getDoc(hospitalRef);
+
+        if (hospitalDoc.exists()) {
+          foundDistrict = district;
+          break;
+        }
+      }
+
+      setSelectedHospital({ ...hospital, district: foundDistrict || "Unknown District" });
+    } catch (error) {
+      console.error("Error fetching hospital data:", error);
+      setSelectedHospital({ ...hospital, district: "Unknown District" });
+    }
+
+    setOpenReviewDialog(true);
+  };
+
+  const handleCloseReviewDialog = () => {
+    setOpenReviewDialog(false);
+    setReviewText("");
+    setReviewerName("");
+  };
+
+  const handleSubmitReview = async () => {
+    if (!reviewerName.trim() || !reviewText.trim()) {
+      alert("Both name and review are required.");
+      return;
+    }
+
+    if (selectedHospital) {
+      try {
+        await addReview(
+          selectedHospital.district,
+          selectedHospital.Name.replace(/\s+/g, '_'),
+          reviewText,
+          reviewerName
+        );
+
+        alert("Review added successfully!");
+        handleCloseReviewDialog();
+      } catch (error) {
+        console.error("Error adding review:", error);
+        alert("Error adding review");
+      }
+    }
+  };
+
   return (
     <div className={`overflow-x-auto w-full ${hospitals.length > 0 ? "" : ""}`}>
       <table className="min-w-full bg-white border border-gray-300 shadow-md rounded-lg overflow-hidden">
@@ -86,12 +159,8 @@ const Hospitals = ({ hospitals, hasSearched }) => {
               key={hospital.id}
               className="border-t border-gray-300 hover:bg-gray-100">
               <td className="px-4 py-3">{hospital.Name || "N/A"}</td>
-              <td className="px-4 py-3 text-center">
-                {hospital.Contact || "N/A"}
-              </td>
-              <td className="px-4 py-3 text-center">
-                {hospital.Type || "N/A"}
-              </td>
+              <td className="px-4 py-3 text-center">{hospital.Contact || "N/A"}</td>
+              <td className="px-4 py-3 text-center">{hospital.Type || "N/A"}</td>
               <td className="px-4 py-3 text-center">{hospital.Rating || 0}</td>
               <td className="px-4 py-3 text-center">
                 {hospital.Website ? (
@@ -116,11 +185,13 @@ const Hospitals = ({ hospitals, hasSearched }) => {
                     View Map
                   </a>
                 ) : (
-                  'N/A'
+                  "N/A"
                 )}
               </td>
-              <td className="text-center  ">
-                <Button className="bg-blue-500 text-white px-3.5 py-1 w-fit mx-auto rounded-full hover:scale-110 transition-all text-sm">
+              <td className="text-center">
+                <Button
+                  className="bg-blue-500 text-white px-3.5 py-1 w-fit mx-auto rounded-full hover:scale-110 transition-all text-sm"
+                  onClick={() => handleOpenReviewDialog(hospital)}>
                   Review
                 </Button>
               </td>
@@ -154,6 +225,42 @@ const Hospitals = ({ hospitals, hasSearched }) => {
           </Button>
         </div>
       )}
+
+      <Dialog
+        open={openReviewDialog}
+        handler={handleCloseReviewDialog}
+        className="p-5">
+        <DialogHeader className="m-3 md:m-0 sm:p-2">
+          Submit Your Review
+        </DialogHeader>
+        <DialogBody className="flex flex-col gap-5">
+          <Input
+            label="Your Name"
+            value={reviewerName}
+            onChange={(e) => setReviewerName(e.target.value)}
+          />
+          <Textarea
+            label="Your Review"
+            value={reviewText}
+            onChange={(e) => setReviewText(e.target.value)}
+            rows={4}
+          />
+        </DialogBody>
+        <DialogFooter>
+          <Button
+            variant="text"
+            color="red"
+            onClick={handleCloseReviewDialog}
+            className="mr-2">
+            Cancel
+          </Button>
+          <Button
+            className="bg-blue-500 text-white"
+            onClick={handleSubmitReview}>
+            Submit
+          </Button>
+        </DialogFooter>
+      </Dialog>
     </div>
   );
 };

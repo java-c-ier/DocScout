@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getFirestore, doc, setDoc } from "firebase/firestore";
+import { getFirestore, doc, setDoc, updateDoc, arrayUnion, getDoc } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBjmd1hdBpoOa_xpOExanUwrPgX3nvaROA",
@@ -16,13 +16,9 @@ const db = getFirestore(app);
 
 // Function to add hospital data to Firestore
 export const addHospital = async (hospital, csvFileName) => {
-  // Ensure csvFileName is defined and remove file extension if present
   const districtName = csvFileName ? csvFileName.replace(/\.[^/.]+$/, "").trim() : 'Unknown District';
-
-  // Check if hospital.Name is defined and sanitize it
   const sanitizedName = hospital.Name ? hospital.Name.trim().replace(/\s+/g, '_').replace(/[^\w-]/g, '') : 'Unknown Hospital';
 
-  // Set reference to Firestore collection
   const hospitalRef = doc(db, `Odisha/${districtName}/Hospitals`, sanitizedName);
 
   try {
@@ -37,6 +33,30 @@ export const addHospital = async (hospital, csvFileName) => {
     console.log(`${hospital.Name || 'Unknown'} added successfully to ${districtName}!`);
   } catch (error) {
     console.error(`Error adding ${hospital.Name || 'Unknown'} to ${districtName}:`, error);
+  }
+};
+
+// Function to add reviews
+export const addReview = async (district, hospitalName, reviewText, reviewerName) => {
+  try {
+    const formattedHospitalName = hospitalName.replace(/\s+/g, "_");
+    const hospitalRef = doc(db, `Odisha/${district}/Hospitals/${formattedHospitalName}`);
+
+    const review = {
+      reviewer: reviewerName.trim(),
+      text: reviewText.trim(),
+      timestamp: new Date().toISOString(),
+    };
+
+    const hospitalDoc = await getDoc(hospitalRef);
+
+    if (hospitalDoc.exists()) {
+      await updateDoc(hospitalRef, {
+        reviews: arrayUnion(review),
+      });
+    }
+  } catch (error) {
+    console.error("Error adding review:", error);
   }
 };
 

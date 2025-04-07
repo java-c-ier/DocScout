@@ -44,8 +44,33 @@ function Hero() {
     "Sundargarh",
   ];
 
+  const diseases = [
+    "Diabetes",
+    "Hypertension",
+    "Asthma",
+    "Tuberculosis",
+    "Dengue",
+    "Malaria",
+    "Typhoid",
+    "Cancer",
+    "Heart Disease",
+    "Stroke",
+    "Arthritis",
+    "Alzheimer's",
+    "Parkinson's",
+    "HIV/AIDS",
+    "Hepatitis",
+    "Pneumonia",
+    "Influenza",
+    "Migraine",
+    "Epilepsy",
+    "Obesity",
+  ];
+
   const [searchInput, setSearchInput] = useState("");
   const [filteredDistricts, setFilteredDistricts] = useState([]);
+  const [diseaseInput, setDiseaseInput] = useState("");
+  const [filteredDiseases, setFilteredDiseases] = useState([]);
   const [hospitalList, setHospitalList] = useState([]);
   const searchBoxRef = useRef(null);
   const hospitalListRef = useRef(null);
@@ -65,9 +90,26 @@ function Hero() {
     }
   };
 
+  const handleDiseaseSearch = (e) => {
+    const query = e.target.value;
+    setDiseaseInput(query);
+    setFilteredDiseases(
+      query
+        ? diseases.filter((d) =>
+            d.toLowerCase().startsWith(query.toLowerCase())
+          )
+        : []
+    );
+  };
+
   const handleSelectDistrict = (district) => {
     setSearchInput(district);
     setFilteredDistricts([]);
+  };
+
+  const handleSelectDisease = (disease) => {
+    setDiseaseInput(disease);
+    setFilteredDiseases([]);
   };
 
   const fetchHospitals = async () => {
@@ -129,12 +171,14 @@ function Hero() {
           <h2 className="text-title">Find hospitals from your phone.</h2>
           <p className="text-description">
             Access accurate, up-to-date healthcare information tailored to your
-            needs. Search providers by location, specialty, and ratings for 
+            needs. Search providers by location, specialty, and ratings for
             enhanced healthcare decision making and accessibility.
           </p>
 
-          <div className="search-area w-full flex relative" ref={searchBoxRef}>
-            <div className="search-box w-[60%]">
+          <div
+            className="search-area w-full flex flex-col sm:flex-row gap-5 relative"
+            ref={searchBoxRef}>
+            <div className="search-box w-[40%]">
               <Input
                 icon={
                   <button onClick={handleSearchButtonClick} aria-label="Search">
@@ -145,13 +189,34 @@ function Hero() {
                 className="bg-white text-[17px]"
                 size="lg"
                 color="blue"
-                value={searchInput} 
+                value={searchInput}
                 onChange={handleSearch}
               />
               <SearchSuggestions
                 filteredDistricts={filteredDistricts}
                 onSelectDistrict={handleSelectDistrict}
               />
+            </div>
+            <div className="search-box w-[40%]">
+              <Input
+                icon={
+                  <button onClick={handleSearchButtonClick} aria-label="Search">
+                    <TbSearch className="text-blue-600" />
+                  </button>
+                }
+                label="Enter Disease"
+                className="bg-white text-[17px]"
+                size="lg"
+                color="blue"
+                value={diseaseInput}
+                onChange={handleDiseaseSearch}
+              />
+              <div className="absolute w-full max-w-[100%]">
+                <SearchSuggestions
+                  filteredDistricts={filteredDiseases}
+                  onSelectDistrict={handleSelectDisease}
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -162,8 +227,10 @@ function Hero() {
       </div>
 
       {/* Hospital List Display using Hospitals Component */}
-      <div ref={hospitalListRef} className={`${hospitalList.length > 0 ? "px-4 py-6" : ""}`}>
-        <Hospitals hospitals={hospitalList} hasSearched={hasSearched} />
+      <div
+        ref={hospitalListRef}
+        className={`${hospitalList.length > 0 ? "px-4 py-6" : ""}`}>
+        <Hospitals hospitals={hospitalList} hasSearched={hasSearched} searchedDistrict={searchInput} />
       </div>
 
       <ToastContainer

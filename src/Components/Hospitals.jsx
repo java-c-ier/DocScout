@@ -11,9 +11,9 @@ import {
 } from "@material-tailwind/react";
 import { ArrowRightIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
 import { db, addReview } from "../Firebase";
-import { collection, getDocs, doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc, setDoc } from "firebase/firestore";
 
-const Hospitals = ({ hospitals, hasSearched }) => {
+const Hospitals = ({ hospitals, hasSearched, searchedDistrict }) => {
   const [activePage, setActivePage] = useState(1);
   const [showNoHospitalsMessage, setShowNoHospitalsMessage] = useState(false);
   const [isDataFetched, setIsDataFetched] = useState(false);
@@ -81,33 +81,10 @@ const Hospitals = ({ hospitals, hasSearched }) => {
     return <p className="text-center text-gray-500">No hospitals available.</p>;
   }
 
-  const handleOpenReviewDialog = async (hospital) => {
-    try {
-      const formattedHospitalName = hospital.Name.replace(/\s+/g, "_");
-      const stateRef = collection(db, "Odisha");
-      const districtsSnapshot = await getDocs(stateRef);
-
-      let foundDistrict = null;
-
-      for (const districtDoc of districtsSnapshot.docs) {
-        const district = districtDoc.id;
-        const hospitalRef = doc(db, `Odisha/${district}/Hospitals/${formattedHospitalName}`);
-        const hospitalDoc = await getDoc(hospitalRef);
-
-        if (hospitalDoc.exists()) {
-          foundDistrict = district;
-          break;
-        }
-      }
-
-      setSelectedHospital({ ...hospital, district: foundDistrict || "Unknown District" });
-    } catch (error) {
-      console.error("Error fetching hospital data:", error);
-      setSelectedHospital({ ...hospital, district: "Unknown District" });
-    }
-
+  const handleOpenReviewDialog = (hospital) => {
+    setSelectedHospital({ ...hospital, district: searchedDistrict || "Unknown District" });
     setOpenReviewDialog(true);
-  };
+  };    
 
   const handleCloseReviewDialog = () => {
     setOpenReviewDialog(false);
@@ -120,16 +97,42 @@ const Hospitals = ({ hospitals, hasSearched }) => {
       alert("Both name and review are required.");
       return;
     }
-
+  
     if (selectedHospital) {
       try {
-        await addReview(
-          selectedHospital.district,
-          selectedHospital.Name.replace(/\s+/g, '_'),
-          reviewText,
-          reviewerName
-        );
-
+        // Normalize the hospital name (e.g., "Arete Care Hospital" becomes "arete_care_hospital")
+        const formattedHospitalName = selectedHospital.Name.replace(/\s+/g, "_");
+  
+        // Use the district provided by the user (from the prop or state)
+        const district = searchedDistrict || "Unknown District";
+  
+        // Construct the document reference for the reviews document
+        // The path is: /Odisha/{district}/Hospitals/{formattedHospitalName}/Reviews/reviews
+        const reviewDocRef = doc(db, "Odisha", district, "Hospitals", formattedHospitalName, "Reviews", "reviews");
+  
+        // Try to fetch the current document
+        const reviewDocSnap = await getDoc(reviewDocRef);
+        let reviewData = {};
+        let newReviewKey = "r1"; // default key
+  
+        if (reviewDocSnap.exists()) {
+          reviewData = reviewDocSnap.data();
+          // Determine the next key based on the number of existing fields
+          const existingReviewCount = Object.keys(reviewData).length;
+          newReviewKey = "r" + (existingReviewCount + 1);
+        }
+        
+        // Prepare the review data to store
+        const newReview = {
+          reviewer: reviewerName.trim(),
+          review: reviewText.trim(),
+          timestamp: new Date().toISOString(),
+        };
+  
+        // Update the document by merging the new review field.
+        // If the document does not exist, setDoc with merge: true creates it.
+        await setDoc(reviewDocRef, { [newReviewKey]: newReview }, { merge: true });
+  
         alert("Review added successfully!");
         handleCloseReviewDialog();
       } catch (error) {
@@ -137,7 +140,7 @@ const Hospitals = ({ hospitals, hasSearched }) => {
         alert("Error adding review");
       }
     }
-  };
+  };    
 
   return (
     <div className={`overflow-x-auto w-full ${hospitals.length > 0 ? "" : ""}`}>

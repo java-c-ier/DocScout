@@ -51,7 +51,7 @@ const SentimentAnalysis = ({ hospital, searchedDistrict }) => {
   // Send reviews to the Flask sentiment analysis endpoint.
   const sendReviewsForAnalysis = async (reviews) => {
     try {
-      const response = await fetch("http://127.0.0.1:5000/analyze", {
+      const response = await fetch("https://flask-backend-c1ss.onrender.com/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ reviews }),

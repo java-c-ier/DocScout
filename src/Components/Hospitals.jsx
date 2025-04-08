@@ -278,7 +278,7 @@ const Hospitals = ({ hospitals, hasSearched, searchedDistrict }) => {
         handler={handleCloseSentimentDialog}
         className="p-5">
         <DialogHeader className="m-3 md:m-0 sm:p-2">
-          Sentiment Analysis - {selectedHospital ? selectedHospital.Name : ""}
+          Reviews - {selectedHospital ? selectedHospital.Name : ""}
         </DialogHeader>
         <DialogBody className="max-h-[500px] overflow-y-auto">
           {/* Embed the SentimentAnalysis component, passing the hospital and district */}

@@ -107,7 +107,7 @@ const SentimentAnalysis = ({ hospital, searchedDistrict }) => {
                   <strong>Review:</strong> {item.review}
                 </p>
                 <p>
-                  <strong>Ratings:</strong> {item.analysis.label}
+                  <strong>Rating:</strong> {item.analysis.label}
                 </p>
                 <br />
               </li>

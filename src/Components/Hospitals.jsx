@@ -12,12 +12,14 @@ import {
 import { ArrowRightIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
 import { db, addReview } from "../Firebase";
 import { doc, getDoc, updateDoc, setDoc } from "firebase/firestore";
+import SentimentAnalysis from "./SentimentAnalysis";  // Import your sentiment analysis component
 
 const Hospitals = ({ hospitals, hasSearched, searchedDistrict }) => {
   const [activePage, setActivePage] = useState(1);
   const [showNoHospitalsMessage, setShowNoHospitalsMessage] = useState(false);
   const [isDataFetched, setIsDataFetched] = useState(false);
   const [openReviewDialog, setOpenReviewDialog] = useState(false);
+  const [openSentimentDialog, setOpenSentimentDialog] = useState(false);
   const [selectedHospital, setSelectedHospital] = useState(null);
   const [reviewText, setReviewText] = useState("");
   const [reviewerName, setReviewerName] = useState("");
@@ -81,10 +83,11 @@ const Hospitals = ({ hospitals, hasSearched, searchedDistrict }) => {
     return <p className="text-center text-gray-500">No hospitals available.</p>;
   }
 
+  // Existing review submission dialog remains unchanged:
   const handleOpenReviewDialog = (hospital) => {
     setSelectedHospital({ ...hospital, district: searchedDistrict || "Unknown District" });
     setOpenReviewDialog(true);
-  };    
+  };
 
   const handleCloseReviewDialog = () => {
     setOpenReviewDialog(false);
@@ -97,42 +100,30 @@ const Hospitals = ({ hospitals, hasSearched, searchedDistrict }) => {
       alert("Both name and review are required.");
       return;
     }
-  
+
     if (selectedHospital) {
       try {
-        // Normalize the hospital name (e.g., "Arete Care Hospital" becomes "arete_care_hospital")
         const formattedHospitalName = selectedHospital.Name.replace(/\s+/g, "_");
-  
-        // Use the district provided by the user (from the prop or state)
         const district = searchedDistrict || "Unknown District";
-  
-        // Construct the document reference for the reviews document
-        // The path is: /Odisha/{district}/Hospitals/{formattedHospitalName}/Reviews/reviews
         const reviewDocRef = doc(db, "Odisha", district, "Hospitals", formattedHospitalName, "Reviews", "reviews");
-  
-        // Try to fetch the current document
+
         const reviewDocSnap = await getDoc(reviewDocRef);
         let reviewData = {};
-        let newReviewKey = "r1"; // default key
-  
+        let newReviewKey = "r1";
+
         if (reviewDocSnap.exists()) {
           reviewData = reviewDocSnap.data();
-          // Determine the next key based on the number of existing fields
           const existingReviewCount = Object.keys(reviewData).length;
           newReviewKey = "r" + (existingReviewCount + 1);
         }
-        
-        // Prepare the review data to store
+
         const newReview = {
           reviewer: reviewerName.trim(),
-          review: reviewText.trim(),
+          text: reviewText.trim(),
           timestamp: new Date().toISOString(),
         };
-  
-        // Update the document by merging the new review field.
-        // If the document does not exist, setDoc with merge: true creates it.
+
         await setDoc(reviewDocRef, { [newReviewKey]: newReview }, { merge: true });
-  
         alert("Review added successfully!");
         handleCloseReviewDialog();
       } catch (error) {
@@ -140,13 +131,24 @@ const Hospitals = ({ hospitals, hasSearched, searchedDistrict }) => {
         alert("Error adding review");
       }
     }
-  };    
+  };
+
+  // New function: when hospital name is clicked, open sentiment dialog
+  const handleOpenSentimentDialog = (hospital) => {
+    setSelectedHospital({ ...hospital, district: searchedDistrict || "Unknown District" });
+    setOpenSentimentDialog(true);
+  };
+
+  const handleCloseSentimentDialog = () => {
+    setOpenSentimentDialog(false);
+  };
 
   return (
     <div className={`overflow-x-auto w-full ${hospitals.length > 0 ? "" : ""}`}>
       <table className="min-w-full bg-white border border-gray-300 shadow-md rounded-lg overflow-hidden">
         <thead>
           <tr className="bg-gray-200 text-gray-700">
+            {/* Hospital Name cell: now clickable to open sentiment analysis dialog */}
             <th className="px-4 py-4 text-left">Name</th>
             <th className="px-4 py-2 text-center">Contact</th>
             <th className="px-4 py-2 text-center">Type</th>
@@ -161,7 +163,11 @@ const Hospitals = ({ hospitals, hasSearched, searchedDistrict }) => {
             <tr
               key={hospital.id}
               className="border-t border-gray-300 hover:bg-gray-100">
-              <td className="px-4 py-3">{hospital.Name || "N/A"}</td>
+              <td
+                className="px-4 py-3 text-blue-600 cursor-pointer"
+                onClick={() => handleOpenSentimentDialog(hospital)}>
+                {hospital.Name || "N/A"}
+              </td>
               <td className="px-4 py-3 text-center">{hospital.Contact || "N/A"}</td>
               <td className="px-4 py-3 text-center">{hospital.Type || "N/A"}</td>
               <td className="px-4 py-3 text-center">{hospital.Rating || 0}</td>
@@ -229,6 +235,7 @@ const Hospitals = ({ hospitals, hasSearched, searchedDistrict }) => {
         </div>
       )}
 
+      {/* Dialog for Review Submission */}
       <Dialog
         open={openReviewDialog}
         handler={handleCloseReviewDialog}
@@ -261,6 +268,34 @@ const Hospitals = ({ hospitals, hasSearched, searchedDistrict }) => {
             className="bg-blue-500 text-white"
             onClick={handleSubmitReview}>
             Submit
+          </Button>
+        </DialogFooter>
+      </Dialog>
+
+      {/* New Dialog for Sentiment Analysis */}
+      <Dialog
+        open={openSentimentDialog}
+        handler={handleCloseSentimentDialog}
+        className="p-5">
+        <DialogHeader className="m-3 md:m-0 sm:p-2">
+          Sentiment Analysis - {selectedHospital ? selectedHospital.Name : ""}
+        </DialogHeader>
+        <DialogBody className="max-h-[500px] overflow-y-auto">
+          {/* Embed the SentimentAnalysis component, passing the hospital and district */}
+          {selectedHospital && (
+            <SentimentAnalysis
+              hospital={selectedHospital}
+              searchedDistrict={searchedDistrict}
+            />
+          )}
+        </DialogBody>
+        <DialogFooter>
+          <Button
+            variant="text"
+            color="red"
+            onClick={handleCloseSentimentDialog}
+            className="mr-2">
+            Close
           </Button>
         </DialogFooter>
       </Dialog>

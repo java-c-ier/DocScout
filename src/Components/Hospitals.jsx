@@ -12,7 +12,7 @@ import {
 import { ArrowRightIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
 import { db, addReview } from "../Firebase";
 import { doc, getDoc, updateDoc, setDoc } from "firebase/firestore";
-import SentimentAnalysis from "./SentimentAnalysis";  // Import your sentiment analysis component
+import SentimentAnalysis from "./SentimentAnalysis"; // Import your sentiment analysis component
 
 const Hospitals = ({ hospitals, hasSearched, searchedDistrict }) => {
   const [activePage, setActivePage] = useState(1);
@@ -85,7 +85,10 @@ const Hospitals = ({ hospitals, hasSearched, searchedDistrict }) => {
 
   // Existing review submission dialog remains unchanged:
   const handleOpenReviewDialog = (hospital) => {
-    setSelectedHospital({ ...hospital, district: searchedDistrict || "Unknown District" });
+    setSelectedHospital({
+      ...hospital,
+      district: searchedDistrict || "Unknown District",
+    });
     setOpenReviewDialog(true);
   };
 
@@ -103,9 +106,20 @@ const Hospitals = ({ hospitals, hasSearched, searchedDistrict }) => {
 
     if (selectedHospital) {
       try {
-        const formattedHospitalName = selectedHospital.Name.replace(/\s+/g, "_");
+        const formattedHospitalName = selectedHospital.Name.replace(
+          /\s+/g,
+          "_"
+        );
         const district = searchedDistrict || "Unknown District";
-        const reviewDocRef = doc(db, "Odisha", district, "Hospitals", formattedHospitalName, "Reviews", "reviews");
+        const reviewDocRef = doc(
+          db,
+          "Odisha",
+          district,
+          "Hospitals",
+          formattedHospitalName,
+          "Reviews",
+          "reviews"
+        );
 
         const reviewDocSnap = await getDoc(reviewDocRef);
         let reviewData = {};
@@ -123,7 +137,11 @@ const Hospitals = ({ hospitals, hasSearched, searchedDistrict }) => {
           timestamp: new Date().toISOString(),
         };
 
-        await setDoc(reviewDocRef, { [newReviewKey]: newReview }, { merge: true });
+        await setDoc(
+          reviewDocRef,
+          { [newReviewKey]: newReview },
+          { merge: true }
+        );
         alert("Review added successfully!");
         handleCloseReviewDialog();
       } catch (error) {
@@ -133,9 +151,12 @@ const Hospitals = ({ hospitals, hasSearched, searchedDistrict }) => {
     }
   };
 
-  // New function: when hospital name is clicked, open sentiment dialog
+  // New function: when see review button is clicked, open sentiment dialog
   const handleOpenSentimentDialog = (hospital) => {
-    setSelectedHospital({ ...hospital, district: searchedDistrict || "Unknown District" });
+    setSelectedHospital({
+      ...hospital,
+      district: searchedDistrict || "Unknown District",
+    });
     setOpenSentimentDialog(true);
   };
 
@@ -148,7 +169,6 @@ const Hospitals = ({ hospitals, hasSearched, searchedDistrict }) => {
       <table className="min-w-full bg-white border border-gray-300 shadow-md rounded-lg overflow-hidden">
         <thead>
           <tr className="bg-gray-200 text-gray-700">
-            {/* Hospital Name cell: now clickable to open sentiment analysis dialog */}
             <th className="px-4 py-4 text-left">Name</th>
             <th className="px-4 py-2 text-center">Contact</th>
             <th className="px-4 py-2 text-center">Type</th>
@@ -163,13 +183,15 @@ const Hospitals = ({ hospitals, hasSearched, searchedDistrict }) => {
             <tr
               key={hospital.id}
               className="border-t border-gray-300 hover:bg-gray-100">
-              <td
-                className="px-4 py-3 text-blue-600 cursor-pointer"
-                onClick={() => handleOpenSentimentDialog(hospital)}>
+              <td className="px-4 py-3">
                 {hospital.Name || "N/A"}
               </td>
-              <td className="px-4 py-3 text-center">{hospital.Contact || "N/A"}</td>
-              <td className="px-4 py-3 text-center">{hospital.Type || "N/A"}</td>
+              <td className="px-4 py-3 text-center">
+                {hospital.Contact || "N/A"}
+              </td>
+              <td className="px-4 py-3 text-center">
+                {hospital.Type || "N/A"}
+              </td>
               <td className="px-4 py-3 text-center">{hospital.Rating || 0}</td>
               <td className="px-4 py-3 text-center">
                 {hospital.Website ? (
@@ -177,7 +199,7 @@ const Hospitals = ({ hospitals, hasSearched, searchedDistrict }) => {
                     href={hospital.Website}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-blue-500 hover:underline">
+                    className="text-blue-500">
                     Visit
                   </a>
                 ) : (
@@ -190,18 +212,23 @@ const Hospitals = ({ hospitals, hasSearched, searchedDistrict }) => {
                     href={hospital["Google Map Link"]}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-blue-500 hover:underline">
+                    className="text-blue-500">
                     View Map
                   </a>
                 ) : (
                   "N/A"
                 )}
               </td>
-              <td className="text-center">
+              <td className="text-center flex flex-col sm:flex-row justify-center items-center gap-2 py-2">
                 <Button
-                  className="bg-blue-500 text-white px-3.5 py-1 w-fit mx-auto rounded-full hover:scale-110 transition-all text-sm"
+                  className="bg-blue-500 text-white px-3.5 py-1 w-fit rounded-full hover:scale-110 transition-all text-sm"
                   onClick={() => handleOpenReviewDialog(hospital)}>
-                  Review
+                  Give Review
+                </Button>
+                <Button
+                  className="bg-green-500 text-white px-3.5 py-1 w-fit rounded-full hover:scale-110 transition-all text-sm"
+                  onClick={() => handleOpenSentimentDialog(hospital)}>
+                  See Review
                 </Button>
               </td>
             </tr>

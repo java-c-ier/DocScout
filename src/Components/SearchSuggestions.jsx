@@ -3,7 +3,7 @@ import React from "react";
 const SearchSuggestions = ({ filteredDistricts, onSelectDistrict }) => {
   return (
     filteredDistricts.length > 0 && (
-      <ul className="absolute bg-white w-[60%] border border-gray-300 max-h-60 overflow-y-auto z-10 mt-1 rounded-md">
+      <ul className="bg-white w-full border border-gray-300 max-h-60 overflow-y-auto z-20 mt-1 rounded-md shadow-lg">
         {filteredDistricts.map((district, index) => (
           <li
             key={index}

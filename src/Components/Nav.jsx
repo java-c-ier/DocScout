@@ -6,7 +6,7 @@ import {
   Button,
   IconButton,
 } from "@material-tailwind/react";
-import { NavLink } from "react-router";
+import { NavLink } from "react-router-dom";
 import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
 import "../Styles/Nav.css";
 
@@ -128,6 +128,15 @@ export function Nav() {
           Upload Hospitals
         </NavLink>
       </Typography> */}
+      <Typography as="li" color="blue-gray" className="p-1 font-normal">
+        <NavLink
+          className="hover-links flex items-center"
+          to="/uploadDoctors"
+          onClick={closeNav}
+        >
+          Upload Doctors
+        </NavLink>
+      </Typography>
     </ul>
   );
 

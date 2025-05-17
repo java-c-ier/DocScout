@@ -128,7 +128,7 @@ export function Nav() {
           Upload Hospitals
         </NavLink>
       </Typography> */}
-      <Typography as="li" color="blue-gray" className="p-1 font-normal">
+      {/* <Typography as="li" color="blue-gray" className="p-1 font-normal">
         <NavLink
           className="hover-links flex items-center"
           to="/uploadDoctors"
@@ -136,7 +136,7 @@ export function Nav() {
         >
           Upload Doctors
         </NavLink>
-      </Typography>
+      </Typography> */}
     </ul>
   );
 

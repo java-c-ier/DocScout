@@ -7,23 +7,40 @@ import {
   DialogBody,
   DialogFooter,
   Input,
-  Textarea,
 } from "@material-tailwind/react";
 import { ArrowRightIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
-import { db, addReview } from "../Firebase";
-import { doc, getDoc, updateDoc, setDoc } from "firebase/firestore";
-import SentimentAnalysis from "./SentimentAnalysis"; // Import your sentiment analysis component
+import { db } from "../Firebase"; // still used for departments
+import { doc, getDoc, collection, getDocs } from "firebase/firestore";
+import { addAspectReview } from "../Firebase"; // our new helper
+import SentimentAnalysis from "./SentimentAnalysis";
 
 const Hospitals = ({ hospitals, hasSearched, searchedDistrict }) => {
+  // ─ pagination & data fetch ─
   const [activePage, setActivePage] = useState(1);
   const [showNoHospitalsMessage, setShowNoHospitalsMessage] = useState(false);
   const [isDataFetched, setIsDataFetched] = useState(false);
-  const [openReviewDialog, setOpenReviewDialog] = useState(false);
-  const [openSentimentDialog, setOpenSentimentDialog] = useState(false);
-  const [selectedHospital, setSelectedHospital] = useState(null);
-  const [reviewText, setReviewText] = useState("");
-  const [reviewerName, setReviewerName] = useState("");
 
+  // ─ review dialog ─
+  const [openReviewDialog, setOpenReviewDialog] = useState(false);
+  const [reviewInputs, setReviewInputs] = useState({
+    cleanliness: "",
+    behaviour: "",
+    care: "",
+    efficiency: "",
+  });
+  const [selectedHospital, setSelectedHospital] = useState(null);
+
+  // ─ sentiment dialog ─
+  const [openSentimentDialog, setOpenSentimentDialog] = useState(false);
+
+  // ─ departments dialog ─
+  const [openDeptDialog, setOpenDeptDialog] = useState(false);
+  const [deptDialogHospital, setDeptDialogHospital] = useState(null);
+  const [deptExpanded, setDeptExpanded] = useState({});
+  const [deptNames, setDeptNames] = useState([]);
+  const [deptDoctors, setDeptDoctors] = useState({});
+
+  // simulate fetch delay
   useEffect(() => {
     const fetchHospitals = async () => {
       if (hasSearched) {
@@ -34,7 +51,6 @@ const Hospitals = ({ hospitals, hasSearched, searchedDistrict }) => {
         setIsDataFetched(false);
       }
     };
-
     fetchHospitals();
   }, [hasSearched]);
 
@@ -46,9 +62,9 @@ const Hospitals = ({ hospitals, hasSearched, searchedDistrict }) => {
     }
   }, [isDataFetched, hospitals]);
 
+  // pagination logic
   const hospitalsPerPage = 10;
   const totalPages = Math.ceil(hospitals.length / hospitalsPerPage);
-
   const indexOfLastHospital = activePage * hospitalsPerPage;
   const indexOfFirstHospital = indexOfLastHospital - hospitalsPerPage;
   const currentHospitals = hospitals.slice(
@@ -59,11 +75,9 @@ const Hospitals = ({ hospitals, hasSearched, searchedDistrict }) => {
   const next = () => {
     if (activePage < totalPages) setActivePage(activePage + 1);
   };
-
   const prev = () => {
     if (activePage > 1) setActivePage(activePage - 1);
   };
-
   const getItemProps = (index) => ({
     variant: activePage === index ? "filled" : "text",
     color: "gray",
@@ -75,83 +89,75 @@ const Hospitals = ({ hospitals, hasSearched, searchedDistrict }) => {
         : {},
   });
 
-  if (!hasSearched || !isDataFetched) {
-    return null;
-  }
-
-  if (showNoHospitalsMessage) {
+  if (!hasSearched || !isDataFetched) return null;
+  if (showNoHospitalsMessage)
     return <p className="text-center text-gray-500">No hospitals available.</p>;
-  }
 
-  // Existing review submission dialog remains unchanged:
+  // ─── REVIEW handlers ───
   const handleOpenReviewDialog = (hospital) => {
     setSelectedHospital({
       ...hospital,
       district: searchedDistrict || "Unknown District",
     });
+    setReviewInputs({
+      cleanliness: "",
+      behaviour: "",
+      care: "",
+      efficiency: "",
+    });
     setOpenReviewDialog(true);
   };
-
   const handleCloseReviewDialog = () => {
     setOpenReviewDialog(false);
-    setReviewText("");
-    setReviewerName("");
+    setReviewInputs({
+      cleanliness: "",
+      behaviour: "",
+      care: "",
+      efficiency: "",
+    });
   };
-
   const handleSubmitReview = async () => {
-    if (!reviewerName.trim() || !reviewText.trim()) {
-      alert("Both name and review are required.");
+    const { cleanliness, behaviour, care, efficiency } = reviewInputs;
+    if (
+      !cleanliness.trim() ||
+      !behaviour.trim() ||
+      !care.trim() ||
+      !efficiency.trim()
+    ) {
+      alert("All four review fields are required.");
       return;
     }
 
-    if (selectedHospital) {
-      try {
-        const formattedHospitalName = selectedHospital.Name.replace(
-          /\s+/g,
-          "_"
-        );
-        const district = searchedDistrict || "Unknown District";
-        const reviewDocRef = doc(
-          db,
-          "Odisha",
+    try {
+      const district = selectedHospital.district;
+      const name = selectedHospital.Name;
+
+      await Promise.all([
+        addAspectReview(district, name, "Cleanliness_and_Hygiene", cleanliness),
+        addAspectReview(
           district,
-          "Hospitals",
-          formattedHospitalName,
-          "Reviews",
-          "reviews"
-        );
+          name,
+          "Doctor_and_Staff_Behaviour",
+          behaviour
+        ),
+        addAspectReview(district, name, "Quality_of_Care", care),
+        addAspectReview(
+          district,
+          name,
+          "Wait_Times_and_Efficiency",
+          efficiency
+        ),
+      ]);
 
-        const reviewDocSnap = await getDoc(reviewDocRef);
-        let reviewData = {};
-        let newReviewKey = "r1";
-
-        if (reviewDocSnap.exists()) {
-          reviewData = reviewDocSnap.data();
-          const existingReviewCount = Object.keys(reviewData).length;
-          newReviewKey = "r" + (existingReviewCount + 1);
-        }
-
-        const newReview = {
-          reviewer: reviewerName.trim(),
-          text: reviewText.trim(),
-          timestamp: new Date().toISOString(),
-        };
-
-        await setDoc(
-          reviewDocRef,
-          { [newReviewKey]: newReview },
-          { merge: true }
-        );
-        alert("Review added successfully!");
-        handleCloseReviewDialog();
-      } catch (error) {
-        console.error("Error adding review:", error);
-        alert("Error adding review");
-      }
+      alert("Review added successfully!");
+      handleCloseReviewDialog();
+    } catch (error) {
+      console.error("Error adding aspect reviews:", error);
+      alert("Error adding review");
     }
   };
 
-  // New function: when see review button is clicked, open sentiment dialog
+  // ─── SENTIMENT handlers ───
   const handleOpenSentimentDialog = (hospital) => {
     setSelectedHospital({
       ...hospital,
@@ -159,13 +165,47 @@ const Hospitals = ({ hospitals, hasSearched, searchedDistrict }) => {
     });
     setOpenSentimentDialog(true);
   };
-
   const handleCloseSentimentDialog = () => {
     setOpenSentimentDialog(false);
   };
 
+  // ─── DEPARTMENT handlers & dynamic fetch ───
+  const handleOpenDeptDialog = async (hospital) => {
+    setDeptDialogHospital(hospital);
+    setDeptExpanded({});
+    setDeptNames([]);
+    setDeptDoctors({});
+    setOpenDeptDialog(true);
+
+    const district = searchedDistrict || "Unknown District";
+    const hospId = hospital.Name.replace(/\s+/g, "_");
+    const hospDocRef = doc(db, "Odisha", district, "Hospitals", hospId);
+
+    const hospSnap = await getDoc(hospDocRef);
+    const names = hospSnap.exists() ? hospSnap.data().departments || [] : [];
+    setDeptNames(names);
+
+    const fetched = {};
+    await Promise.all(
+      names.map(async (dept) => {
+        const snap = await getDocs(collection(hospDocRef, dept));
+        fetched[dept] = snap.docs.map((d) => d.data());
+      })
+    );
+    setDeptDoctors(fetched);
+  };
+  const handleCloseDeptDialog = () => {
+    setOpenDeptDialog(false);
+    setDeptDialogHospital(null);
+    setDeptNames([]);
+    setDeptDoctors({});
+  };
+  const toggleDeptAccordion = (deptName) =>
+    setDeptExpanded((prev) => ({ ...prev, [deptName]: !prev[deptName] }));
+
   return (
-    <div className={`overflow-x-auto w-full ${hospitals.length > 0 ? "" : ""}`}>
+    <div className="overflow-x-auto w-full">
+      {/* ─── HOSPITALS TABLE ─── */}
       <table className="min-w-full bg-white border border-gray-300 shadow-md rounded-lg overflow-hidden">
         <thead>
           <tr className="bg-gray-200 text-gray-700">
@@ -175,7 +215,7 @@ const Hospitals = ({ hospitals, hasSearched, searchedDistrict }) => {
             <th className="px-4 py-2 text-center">Rating</th>
             <th className="px-4 py-2 text-center">Website</th>
             <th className="px-4 py-2 text-center">Google Map Link</th>
-            <th className="px-4 py-2 text-center">Review</th>
+            <th className="text-center px-4 py-2">Review</th>
           </tr>
         </thead>
         <tbody>
@@ -183,8 +223,14 @@ const Hospitals = ({ hospitals, hasSearched, searchedDistrict }) => {
             <tr
               key={hospital.id}
               className="border-t border-gray-300 hover:bg-gray-100">
-              <td className="px-4 py-3">
+              <td className="px-4 py-3 flex items-center gap-2">
                 {hospital.Name || "N/A"}
+                <button
+                  onClick={() => handleOpenDeptDialog(hospital)}
+                  className="transform transition-transform duration-200 hover:rotate-45 text-blue-500"
+                  title="View Departments">
+                  ↗
+                </button>
               </td>
               <td className="px-4 py-3 text-center">
                 {hospital.Contact || "N/A"}
@@ -236,6 +282,7 @@ const Hospitals = ({ hospitals, hasSearched, searchedDistrict }) => {
         </tbody>
       </table>
 
+      {/* ─── PAGINATION ─── */}
       {totalPages > 1 && (
         <div className="flex justify-center mt-4 gap-4">
           <Button
@@ -262,25 +309,98 @@ const Hospitals = ({ hospitals, hasSearched, searchedDistrict }) => {
         </div>
       )}
 
-      {/* Dialog for Review Submission */}
+      {/* ─── DEPARTMENTS DIALOG ─── */}
+      <Dialog
+        open={openDeptDialog}
+        handler={handleCloseDeptDialog}
+        className="p-5">
+        <DialogHeader className="m-3 md:m-0 sm:p-2">
+          Departments – {deptDialogHospital?.Name || ""}
+        </DialogHeader>
+        <DialogBody className="space-y-3 max-h-[50vh] overflow-y-scroll">
+          {deptNames.length > 0 ? (
+            deptNames.map((deptName) => (
+              <div key={deptName} className="border rounded-lg overflow-hidden">
+                <button
+                  onClick={() => toggleDeptAccordion(deptName)}
+                  className="w-full px-4 py-2 text-left bg-blue-100 font-semibold hover:bg-blue-200 transition">
+                  {deptName}
+                </button>
+                <div
+                  className={`overflow-hidden transition-[max-height] duration-500 ease-in-out ${
+                    deptExpanded[deptName] ? "max-h-96" : "max-h-0"
+                  }`}>
+                  <div className="p-4 bg-white text-sm text-gray-700 max-h-[300px] overflow-y-auto">
+                    {(deptDoctors[deptName] || []).length > 0 ? (
+                      deptDoctors[deptName].map((doc, idx) => (
+                        <div key={idx} className="pb-5 pl-2">
+                          <strong className="font-semibold text-base text-gray-900">
+                            {doc.Name}
+                          </strong>{" "}
+                          – {doc.Qualification} <br />
+                          Specialization - {doc.Specialization} <br />
+                          Experience - {doc.Experience} <br />
+                          Timing - {doc.Timing}
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-center text-gray-500">
+                        No doctors in this department.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))
+          ) : (
+            <p className="text-center text-gray-500">
+              No department data available.
+            </p>
+          )}
+        </DialogBody>
+        <DialogFooter>
+          <Button
+            onClick={handleCloseDeptDialog}
+            className="bg-red-500 text-white">
+            Close
+          </Button>
+        </DialogFooter>
+      </Dialog>
+
+      {/* ─── REVIEW SUBMISSION DIALOG ─── */}
       <Dialog
         open={openReviewDialog}
         handler={handleCloseReviewDialog}
         className="p-5">
-        <DialogHeader className="m-3 md:m-0 sm:p-2">
-          Submit Your Review
-        </DialogHeader>
-        <DialogBody className="flex flex-col gap-5">
+        <DialogHeader>Submit Your Review</DialogHeader>
+        <DialogBody className="space-y-4">
           <Input
-            label="Your Name"
-            value={reviewerName}
-            onChange={(e) => setReviewerName(e.target.value)}
+            label="Cleanliness and Hygiene"
+            value={reviewInputs.cleanliness}
+            onChange={(e) =>
+              setReviewInputs({ ...reviewInputs, cleanliness: e.target.value })
+            }
           />
-          <Textarea
-            label="Your Review"
-            value={reviewText}
-            onChange={(e) => setReviewText(e.target.value)}
-            rows={4}
+          <Input
+            label="Doctor and Staff Behaviour"
+            value={reviewInputs.behaviour}
+            onChange={(e) =>
+              setReviewInputs({ ...reviewInputs, behaviour: e.target.value })
+            }
+          />
+          <Input
+            label="Quality of Care"
+            value={reviewInputs.care}
+            onChange={(e) =>
+              setReviewInputs({ ...reviewInputs, care: e.target.value })
+            }
+          />
+          <Input
+            label="Wait Times and Efficiency"
+            value={reviewInputs.efficiency}
+            onChange={(e) =>
+              setReviewInputs({ ...reviewInputs, efficiency: e.target.value })
+            }
           />
         </DialogBody>
         <DialogFooter>
@@ -299,16 +419,14 @@ const Hospitals = ({ hospitals, hasSearched, searchedDistrict }) => {
         </DialogFooter>
       </Dialog>
 
-      {/* New Dialog for Sentiment Analysis */}
+      {/* ─── SENTIMENT ANALYSIS DIALOG ─── */}
       <Dialog
         open={openSentimentDialog}
         handler={handleCloseSentimentDialog}
-        className="p-5">
-        <DialogHeader className="m-3 md:m-0 sm:p-2">
-          Reviews - {selectedHospital ? selectedHospital.Name : ""}
-        </DialogHeader>
+        className="p-5 w-full max-w-4xl mx-auto" // Ensuring max width is applied
+        style={{ width: "70%", maxWidth: "80%" }}>
+        <DialogHeader>Reviews — {selectedHospital?.Name || ""}</DialogHeader>
         <DialogBody className="max-h-[500px] overflow-y-auto">
-          {/* Embed the SentimentAnalysis component, passing the hospital and district */}
           {selectedHospital && (
             <SentimentAnalysis
               hospital={selectedHospital}

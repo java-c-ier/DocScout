@@ -1,5 +1,5 @@
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
-const TO_EMAIL = "jimutksahoo99@trisysit.com";
+const TO_EMAIL = "jimutksahoo99@gmail.com";
 const FROM_EMAIL = "onboarding@resend.dev";
 
 exports.handler = async (event) => {

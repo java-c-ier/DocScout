@@ -1,7 +1,6 @@
 import React, { useRef, useState } from "react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import emailjs from "@emailjs/browser";
 import customer from "../assets/customer.png";
 
 const inputClass =
@@ -15,13 +14,20 @@ export function Contact() {
   const onSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
+    const data = new FormData(formRef.current);
     try {
-      await emailjs.sendForm(
-        import.meta.env.VITE_EMAILJS_SERVICE_ID,
-        import.meta.env.VITE_EMAILJS_TEMPLATE_ID,
-        formRef.current,
-        import.meta.env.VITE_EMAILJS_PUBLIC_KEY
-      );
+      const res = await fetch("/.netlify/functions/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          firstName: data.get("first-name"),
+          lastName: data.get("last-name"),
+          email: data.get("email"),
+          phone: data.get("phone"),
+          message: data.get("message"),
+        }),
+      });
+      if (!res.ok) throw new Error();
       toast.success("Message sent successfully.");
       e.target.reset();
     } catch {

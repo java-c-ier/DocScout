@@ -1,4 +1,5 @@
 import { initializeApp } from "firebase/app";
+import { getAuth } from "firebase/auth";
 import {
   getFirestore,
   doc,
@@ -6,25 +7,29 @@ import {
   updateDoc,
   arrayUnion,
   getDoc,
-  collection,
-  addDoc,
 } from "firebase/firestore";
 
-// Your Firebase configuration
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  databaseURL: import.meta.env.VITE_FIREBASE_DB_URL,
+  databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL,
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
+let app = null;
+let db = null;
+let auth = null;
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+if (import.meta.env.VITE_FIREBASE_API_KEY) {
+  app = initializeApp(firebaseConfig);
+  db = getFirestore(app);
+  auth = getAuth(app);
+} else {
+  console.warn("Firebase not configured: missing VITE_FIREBASE_* env vars.");
+}
 
 /**
  * Add a hospital document under:
@@ -206,4 +211,4 @@ export const addDoctor = async (doctorData) => {
   }
 };
 
-export { app, db };
+export { app, db, auth };

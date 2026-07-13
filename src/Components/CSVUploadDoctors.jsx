@@ -30,7 +30,7 @@ function CSVUploadDoctors() {
         try {
           for (const row of doctors) {
             // must include: id, hospital, district, plus any doc fields
-            await addDoctor(row, file.name);
+            await addDoctor(row);
           }
           alert("Doctors added successfully!");
           setFile(null);

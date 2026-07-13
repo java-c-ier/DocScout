@@ -1,175 +1,134 @@
-import React from "react";
-import { Button, Input, Textarea, Typography } from "@material-tailwind/react";
+import React, { useRef, useState } from "react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import customer from '../assets/customer.png'
+import emailjs from "@emailjs/browser";
+import customer from "../assets/customer.png";
+
+const inputClass =
+  "w-full border border-gray-300 rounded-lg px-4 py-3 text-sm text-gray-900 placeholder-gray-400 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition";
+const labelClass = "block text-sm font-medium text-gray-700 mb-1.5";
 
 export function Contact() {
-  const [result, setResult] = React.useState("");
+  const formRef = useRef(null);
+  const [submitting, setSubmitting] = useState(false);
 
-  const onSubmit = async (event) => {
-    event.preventDefault();
-    setResult("Sending....");
-    const formData = new FormData(event.target);
-
-    formData.append("access_key", "0e132523-6194-4c0b-8dd8-c875796fbdec");
-
+  const onSubmit = async (e) => {
+    e.preventDefault();
+    setSubmitting(true);
     try {
-      const response = await fetch("https://api.web3forms.com/submit", {
-        method: "POST",
-        body: formData,
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        setResult("Form Submitted Successfully");
-        toast.success("Message sent successfully.");
-        event.target.reset();
-      } else {
-        setResult("Failed to submit");
-        toast.error("Error! Please try again later.");
-      }
-    } catch (error) {
-      setResult("Network error");
-      toast.error("Network error! Please try again later.");
+      await emailjs.sendForm(
+        import.meta.env.VITE_EMAILJS_SERVICE_ID,
+        import.meta.env.VITE_EMAILJS_TEMPLATE_ID,
+        formRef.current,
+        import.meta.env.VITE_EMAILJS_PUBLIC_KEY
+      );
+      toast.success("Message sent successfully.");
+      e.target.reset();
+    } catch {
+      toast.error("Error! Please try again later.");
+    } finally {
+      setSubmitting(false);
     }
   };
 
   return (
-    <section className="px-8 pt-14" id="contact">
-      <div className="container mx-auto text-center">
-        <Typography
-          variant="h1"
-          color="black"
-          className="mb-4 !text-3xl lg:!text-5xl"
-        >
-          We&apos;re Here to Help
-        </Typography>
-        <Typography className="mb-10 font-normal !text-lg lg:mb-12 mx-auto max-w-3xl text-gray-800">
-          Whether it&apos;s a question about our services, a request for
-          technical assistance, or suggestions for improvement, our team is
-          eager to hear from you.
-        </Typography>
-        <div className="grid grid-cols-1 gap-x-12 gap-y-6 lg:grid-cols-2 items-start justify-items-center">
+    <section className="py-16 md:py-24" id="contact">
+      <div className="mx-auto max-w-7xl px-4 md:px-8">
+
+        {/* Header */}
+        <div className="mx-auto flex w-full max-w-3xl flex-col items-center text-center">
+          <span className="text-sm font-semibold text-[#1a8efd] md:text-base tracking-wide uppercase">
+            Contact us
+          </span>
+          <h2 className="mt-3 text-3xl font-bold text-gray-900 md:text-5xl" style={{ fontFamily: "Poppins, sans-serif" }}>
+            Get in touch
+          </h2>
+          <p className="mt-4 text-lg text-gray-500 md:mt-6 md:text-xl" style={{ fontFamily: "Rubik, sans-serif" }}>
+            We'd love to hear from you. Please fill out this form.
+          </p>
+        </div>
+
+        {/* Image + Form */}
+        <div className="mx-auto mt-12 md:mt-16 grid grid-cols-1 lg:grid-cols-[5fr_4fr] gap-24 items-center">
           <img
             src={customer}
-            alt="map"
-            className="h-full lg:max-h-[510px] rounded-md"
+            alt="Contact"
+            className="w-full max-h-[860px] object-contain rounded-xl hidden lg:block"
           />
+
           <form
+            ref={formRef}
             onSubmit={onSubmit}
-            action="#"
-            className="flex flex-col gap-4 lg:max-w-sm"
+            className="flex flex-col gap-5"
           >
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Typography
-                  variant="small"
-                  className="mb-2 text-left font-medium !text-gray-900"
-                >
-                  First Name
-                </Typography>
-                <Input
-                  required
-                  color="black"
-                  size="lg"
-                  placeholder="First Name"
-                  name="first-name"
-                  className="focus:border-t-gray-900"
-                  containerProps={{
-                    className: "!min-w-full",
-                  }}
-                  labelProps={{
-                    className: "hidden",
-                  }}
-                />
+            {/* First + Last name */}
+            <div className="flex flex-col gap-5 sm:flex-row">
+              <div className="flex-1">
+                <label className={labelClass}>First name <span className="text-red-500">*</span></label>
+                <input required name="first-name" type="text" placeholder="First name" className={inputClass} />
               </div>
-              <div>
-                <Typography
-                  variant="small"
-                  className="mb-2 text-left font-medium !text-gray-900"
-                >
-                  Last Name
-                </Typography>
-                <Input
-                  required
-                  color="gray"
-                  size="lg"
-                  placeholder="Last Name"
-                  name="last-name"
-                  className="focus:border-t-gray-900"
-                  containerProps={{
-                    className: "!min-w-full",
-                  }}
-                  labelProps={{
-                    className: "hidden",
-                  }}
+              <div className="flex-1">
+                <label className={labelClass}>Last name <span className="text-red-500">*</span></label>
+                <input required name="last-name" type="text" placeholder="Last name" className={inputClass} />
+              </div>
+            </div>
+
+            {/* Email */}
+            <div>
+              <label className={labelClass}>Email <span className="text-red-500">*</span></label>
+              <input required name="email" type="email" placeholder="you@company.com" className={inputClass} />
+            </div>
+
+            {/* Phone */}
+            <div>
+              <label className={labelClass}>Phone number</label>
+              <div className="flex rounded-lg border border-gray-300 overflow-hidden focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent transition bg-white">
+                <span className="flex items-center px-3 py-3 text-sm text-gray-700 bg-gray-50 border-r border-gray-300 whitespace-nowrap">
+                  🇮🇳 +91
+                </span>
+                <input
+                  type="tel"
+                  name="phone"
+                  placeholder="00000 00000"
+                  className="flex-1 px-4 py-3 text-sm text-gray-900 placeholder-gray-400 bg-white focus:outline-none"
                 />
               </div>
             </div>
+
+            {/* Message */}
             <div>
-              <Typography
-                variant="small"
-                className="mb-2 text-left font-medium !text-gray-900"
-              >
-                Your Email
-              </Typography>
-              <Input
+              <label className={labelClass}>Message <span className="text-red-500">*</span></label>
+              <textarea
                 required
-                color="gray"
-                size="lg"
-                placeholder="name@email.com"
-                name="email"
-                className="focus:border-t-gray-900"
-                containerProps={{
-                  className: "!min-w-full",
-                }}
-                labelProps={{
-                  className: "hidden",
-                }}
-              />
-            </div>
-            <div>
-              <Typography
-                variant="small"
-                className="mb-2 text-left font-medium !text-gray-900"
-              >
-                Your Message
-              </Typography>
-              <Textarea
-                required
-                rows={6}
-                color="gray"
-                placeholder="Message"
                 name="message"
-                className="focus:border-t-gray-900"
-                containerProps={{
-                  className: "!min-w-full",
-                }}
-                labelProps={{
-                  className: "hidden",
-                }}
+                placeholder="Leave us a message..."
+                rows={5}
+                className={`${inputClass} resize-none`}
               />
             </div>
-            <Button type="submit" className="w-full" color="blue">
-              Send message
-            </Button>
-            <ToastContainer
-              position="top-center"
-              autoClose={4000}
-              hideProgressBar={false}
-              newestOnTop={false}
-              closeOnClick
-              rtl={false}
-              pauseOnFocusLoss
-              draggable
-              pauseOnHover
-              theme="colored"
-            />
+
+            {/* Submit */}
+            <button
+              type="submit"
+              disabled={submitting}
+              className="w-full bg-[#1a8efd] hover:bg-blue-600 disabled:opacity-60 text-white py-3.5 rounded-lg text-base font-semibold transition"
+              style={{ fontFamily: "Rubik, sans-serif" }}
+            >
+              {submitting ? "Sending..." : "Send message"}
+            </button>
           </form>
         </div>
       </div>
+
+      <ToastContainer
+        position="top-center"
+        autoClose={4000}
+        hideProgressBar={false}
+        closeOnClick
+        pauseOnHover
+        theme="colored"
+        style={{ width: "400px" }}
+      />
     </section>
   );
 }

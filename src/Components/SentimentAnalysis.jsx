@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../Firebase";
-import { Star, StarHalf, Star as StarEmpty } from "lucide-react";
+import { Star, StarHalf, StarOff } from "lucide-react";
 
 const ASPECTS = [
   "Cleanliness_and_Hygiene",
@@ -25,7 +25,7 @@ const renderStars = (rating) => {
         <StarHalf className="text-yellow-500 fill-yellow-500 w-5 h-5" />
       )}
       {[...Array(emptyStars)].map((_, i) => (
-        <StarEmpty key={`empty-${i}`} className="text-gray-300 w-5 h-5" />
+        <StarOff key={`empty-${i}`} className="text-gray-300 w-5 h-5" />
       ))}
       <span className="ml-2 text-sm text-gray-700">({rating.toFixed(1)})</span>
     </div>
@@ -38,6 +38,7 @@ const SentimentAnalysis = ({ hospital, searchedDistrict }) => {
   const [loading, setLoading] = useState(true);
 
   const retrieveReviews = async () => {
+    if (!db) return {};
     const hospId = hospital.Name
       ? hospital.Name.trim().replace(/\s+/g, "_")
       : "Unknown_Hospital";

@@ -10,34 +10,34 @@ function StarIcon() {
 
 const testimonials = [
   {
-    name: "Evan Stone",
+    name: "Ravi Shankar Panda",
     stars: 5,
     avatar: "https://images.unsplash.com/photo-1633332755192-727a05c4013d?ixlib=rb-1.2.1&auto=format&fit=crop&w=1480&q=80",
-    text: "I recently moved to a new city, and this site made it incredibly easy to find the best hospitals near me. The search was fast, and the results were reliable, saving me a lot of time and stress!",
+    text: "My father had chest pain at midnight. I had no idea which hospital to go to in Bhubaneswar. Found a good one nearby within 2 minutes. Doctors were available, got admitted immediately. Cannot thank enough.",
   },
   {
-    name: "Tania Andrew",
+    name: "Priya Mohanty",
     stars: 4,
     avatar: "https://images.unsplash.com/photo-1485178575877-1a13bf489dfe?q=80&w=2001&auto=format&fit=crop",
-    text: "I've always struggled to find quality hospitals for specific needs, but this site made the process effortless. It quickly showed me highly-rated options based on my location. A real time-saver!",
+    text: "Shifted to Cuttack 3 months back. Was worried about finding a good gynecologist. DocScout showed hospitals with reviews so I could compare before going. Saved a lot of back and forth. One suggestion — add OPD timings if possible.",
   },
   {
-    name: "Maya Lane",
-    stars: 4,
-    avatar: "https://images.unsplash.com/photo-1532170579297-281918c8ae72?q=80&w=1784&auto=format&fit=crop",
-    text: "I was in urgent need of medical care and had no idea where to go. This website provided accurate, top-rated hospitals nearby, which helped me make a quick decision.",
-  },
-  {
-    name: "Liam Ross",
+    name: "Debasish Nayak",
     stars: 5,
     avatar: "https://images.unsplash.com/photo-1556157382-97eda2d62296?q=80&w=2070&auto=format&fit=crop",
-    text: "I travel often for work, and this site has been a game-changer. It instantly shows me trusted hospitals nearby. Perfect for anyone needing quick and reliable healthcare options.",
+    text: "Honestly didn't expect much but it actually works. Was visiting my cousin in Sambalpur, kid fell sick. Found a paediatrician nearby, the reviews helped me pick the right place. Good work by the team.",
   },
   {
-    name: "Ava Brooks",
+    name: "Ankita Das",
     stars: 4,
+    avatar: "https://images.unsplash.com/photo-1532170579297-281918c8ae72?q=80&w=1784&auto=format&fit=crop",
+    text: "The nearby hospital feature is genuinely useful. I used it when my mother needed dialysis and we were not sure which centre near Puri had the facility. Found it in seconds. Reviews were helpful too.",
+  },
+  {
+    name: "Suresh Kumar Sahoo",
+    stars: 5,
     avatar: "https://images.unsplash.com/photo-1699899662121-882a20f9bea6?q=80&w=2070&auto=format&fit=crop",
-    text: "I love how this website doesn't just show nearby hospitals—it also gives detailed reviews and important info. It's my go-to platform for finding the right healthcare providers.",
+    text: "I work in a remote area near Koraput. Getting healthcare info was always a problem. This app showed hospitals even in smaller districts. Not all hospitals are listed but what is there is accurate.",
   },
 ];
 

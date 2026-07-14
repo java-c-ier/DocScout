@@ -59,6 +59,7 @@ exports.handler = async (event) => {
       body: JSON.stringify({
         from: FROM_EMAIL,
         to: email,
+        reply_to: email,
         subject: `Thank you for contacting DocScout, ${firstName}!`,
         html: fill(autoReplyTemplate, data),
       }),

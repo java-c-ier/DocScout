@@ -243,7 +243,7 @@ function Hero() {
             {/* Row 1: search boxes */}
             <div className="flex flex-col sm:flex-row sm:items-stretch gap-3">
               {/* District Search */}
-              <div className="search-box w-full sm:w-[225px] relative" ref={locationBoxRef}>
+              <div className="search-box w-full sm:w-[230px] relative" ref={locationBoxRef}>
                 <div className="relative">
                   <input
                     type="text"
@@ -267,7 +267,7 @@ function Hero() {
               </div>
 
               {/* Disease Search */}
-              <div className="search-box w-full sm:w-[225px] relative" ref={diseaseBoxRef}>
+              <div className="search-box w-full sm:w-[230px] relative" ref={diseaseBoxRef}>
                 <div className="relative">
                   <input
                     type="text"
@@ -295,7 +295,7 @@ function Hero() {
             <button
               onClick={handleNearbyHospitals}
               disabled={loadingNearby}
-              className="flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-600 disabled:opacity-60 text-white px-4 py-2.5 rounded-lg font-medium transition whitespace-nowrap w-full sm:w-[465px]"
+              className="flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-600 disabled:opacity-60 text-white px-4 py-2.5 rounded-lg font-medium transition whitespace-nowrap w-full sm:w-[472px]"
             >
               {loadingNearby ? (
                 <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">

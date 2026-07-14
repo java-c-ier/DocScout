@@ -3,7 +3,7 @@ const path = require("path");
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 const TO_EMAIL = "jimutksahoo99@gmail.com";
-const FROM_EMAIL = "doc-scout@jimut.in";
+const FROM_EMAIL = "DocScout <doc-scout@jimut.in>";
 
 const notificationTemplate = fs.readFileSync(path.join(__dirname, "templates/contact-form-template.html"), "utf8");
 const autoReplyTemplate = fs.readFileSync(path.join(__dirname, "templates/autoreply-template.html"), "utf8");

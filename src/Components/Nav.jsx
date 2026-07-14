@@ -1,14 +1,14 @@
 import React, { useState, useEffect, useRef } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router";
-import { onAuthStateChanged, signOut } from "firebase/auth";
+import { signOut } from "firebase/auth";
 import { auth } from "../Firebase";
+import { useAuth } from "../AuthContext";
 import "../Styles/Nav.css";
 
 export function Nav() {
   const [openNav, setOpenNav] = useState(false);
-  const [user, setUser] = useState(null);
-  const [authReady, setAuthReady] = useState(false);
   const [profileDropdown, setProfileDropdown] = useState(false);
+  const { user, setUser, authReady } = useAuth();
   const navRef = useRef(null);
   const profileDropdownRef = useRef(null);
   const location = useLocation();
@@ -17,25 +17,11 @@ export function Nav() {
   const isProfilePage = location.pathname === "/profile";
 
   useEffect(() => {
-    if (!auth) return;
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        await user.reload();
-        setUser({ ...user });
-      } else {
-        setUser(null);
-      }
-      setAuthReady(true);
-    });
-
     const handleProfileUpdated = () => {
       if (auth.currentUser) setUser({ ...auth.currentUser });
     };
     window.addEventListener("profileUpdated", handleProfileUpdated);
-    return () => {
-      unsubscribe();
-      window.removeEventListener("profileUpdated", handleProfileUpdated);
-    };
+    return () => window.removeEventListener("profileUpdated", handleProfileUpdated);
   }, []);
 
   const handleSignOut = () => {

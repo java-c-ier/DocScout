@@ -1,20 +1,16 @@
 import { useState, useEffect } from 'react'
-import { onAuthStateChanged } from 'firebase/auth'
-import { auth } from './Firebase'
+import { AuthProvider, useAuth } from './AuthContext'
 import Routing from './utils/Routing'
 
-function App() {
-  const [authReady, setAuthReady] = useState(false)
+function AppContent() {
+  const { authReady } = useAuth()
   const [visible, setVisible] = useState(true)
 
   useEffect(() => {
-    if (!auth) { setAuthReady(true); return }
-    const unsub = onAuthStateChanged(auth, () => {
-      setAuthReady(true)
+    if (authReady) {
       setTimeout(() => setVisible(false), 300)
-    })
-    return unsub
-  }, [])
+    }
+  }, [authReady])
 
   return (
     <>
@@ -39,6 +35,14 @@ function App() {
       )}
       <Routing />
     </>
+  )
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   )
 }
 

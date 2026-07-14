@@ -235,60 +235,63 @@ function Hero() {
             decision making and accessibility.
           </p>
 
-          <div className="search-area w-full flex flex-col sm:flex-row sm:items-stretch gap-5" ref={searchBoxRef}>
-            {/* District Search */}
-            <div className="search-box w-full sm:w-[220px] relative">
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Enter Location"
-                  className="w-full border-2 border-blue-400 rounded-lg px-4 py-3 pr-10 text-[17px] bg-white focus:outline-none focus:border-blue-600"
-                  value={searchInput}
-                  onChange={handleSearch}
-                  onFocus={() => { setFilteredDistricts(districts); setFilteredDiseases([]); }}
-                />
-                <button
-                  onClick={handleSearchButtonClick}
-                  aria-label="Search"
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-blue-600 cursor-pointer"
-                >
-                  <TbSearch className="w-5 h-5" />
-                </button>
+          <div className="search-area w-full flex flex-col gap-3" ref={searchBoxRef}>
+            {/* Row 1: search boxes */}
+            <div className="flex flex-col sm:flex-row sm:items-stretch gap-3">
+              {/* District Search */}
+              <div className="search-box w-full sm:w-[225px] relative">
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Enter Location"
+                    className="w-full border-2 border-blue-400 rounded-lg px-4 py-2 pr-10 text-[16px] bg-white focus:outline-none focus:border-blue-600"
+                    value={searchInput}
+                    onChange={handleSearch}
+                    onFocus={() => { setFilteredDistricts(districts); setFilteredDiseases([]); }}
+                  />
+                  <button
+                    onClick={handleSearchButtonClick}
+                    aria-label="Search"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-blue-600 cursor-pointer"
+                  >
+                    <TbSearch className="w-5 h-5" />
+                  </button>
+                </div>
+                <div className="absolute top-full left-0 w-full z-20">
+                  <SearchSuggestions filteredDistricts={filteredDistricts} onSelectDistrict={handleSelectDistrict} />
+                </div>
               </div>
-              <div className="absolute top-full left-0 w-full z-20">
-                <SearchSuggestions filteredDistricts={filteredDistricts} onSelectDistrict={handleSelectDistrict} />
+
+              {/* Disease Search */}
+              <div className="search-box w-full sm:w-[225px] relative">
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Enter Disease"
+                    className="w-full border-2 border-blue-400 rounded-lg px-4 py-2 pr-10 text-[16px] bg-white focus:outline-none focus:border-blue-600"
+                    value={diseaseInput}
+                    onChange={handleDiseaseSearch}
+                    onFocus={() => { setFilteredDiseases(diseases); setFilteredDistricts([]); }}
+                  />
+                  <button
+                    onClick={handleSearchButtonClick}
+                    aria-label="Search"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-blue-600 cursor-pointer"
+                  >
+                    <TbSearch className="w-5 h-5" />
+                  </button>
+                </div>
+                <div className="absolute top-full left-0 w-full z-20">
+                  <SearchSuggestions filteredDistricts={filteredDiseases} onSelectDistrict={handleSelectDisease} />
+                </div>
               </div>
             </div>
 
-            {/* Disease Search */}
-            <div className="search-box w-full sm:w-[220px] relative">
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Enter Disease"
-                  className="w-full border-2 border-blue-400 rounded-lg px-4 py-3 pr-10 text-[17px] bg-white focus:outline-none focus:border-blue-600"
-                  value={diseaseInput}
-                  onChange={handleDiseaseSearch}
-                  onFocus={() => { setFilteredDiseases(diseases); setFilteredDistricts([]); }}
-                />
-                <button
-                  onClick={handleSearchButtonClick}
-                  aria-label="Search"
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-blue-600 cursor-pointer"
-                >
-                  <TbSearch className="w-5 h-5" />
-                </button>
-              </div>
-              <div className="absolute top-full left-0 w-full z-20">
-                <SearchSuggestions filteredDistricts={filteredDiseases} onSelectDistrict={handleSelectDisease} />
-              </div>
-            </div>
-
-            {/* Nearby hospitals button */}
+            {/* Row 2: Nearby hospitals button spanning both boxes */}
             <button
               onClick={handleNearbyHospitals}
               disabled={loadingNearby}
-              className="flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-600 disabled:opacity-60 text-white px-4 py-3 sm:py-0 rounded-lg font-medium transition whitespace-nowrap"
+              className="flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-600 disabled:opacity-60 text-white px-4 py-2 rounded-lg font-medium transition whitespace-nowrap w-full sm:w-[465px]"
             >
               {loadingNearby ? (
                 <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">

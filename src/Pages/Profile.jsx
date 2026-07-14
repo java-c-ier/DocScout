@@ -1,9 +1,8 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import {
   updateProfile,
   updatePassword,
-  deleteUser,
   reauthenticateWithCredential,
   EmailAuthProvider,
   onAuthStateChanged,
@@ -27,18 +26,13 @@ function Profile() {
   const [showNewPw, setShowNewPw] = useState(false);
   const [savingPw, setSavingPw] = useState(false);
 
-  const [deleteConfirm, setDeleteConfirm] = useState("");
-  const [deletePw, setDeletePw] = useState("");
-  const [deleting, setDeleting] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const deletingRef = useRef(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       if (firebaseUser) {
         setUser(firebaseUser);
         setDisplayName(firebaseUser.displayName || "");
-      } else if (!deletingRef.current) {
+      } else {
         navigate("/");
       }
       setAuthLoading(false);
@@ -101,31 +95,6 @@ function Profile() {
       }
     } finally {
       setSavingPw(false);
-    }
-  };
-
-  const handleDeleteAccount = async () => {
-    if (deleteConfirm !== "DELETE") { toast.error('Type "DELETE" to confirm.'); return; }
-    setDeleting(true);
-    deletingRef.current = true;
-    try {
-      if (isEmailUser) {
-        const credential = EmailAuthProvider.credential(user.email, deletePw);
-        await reauthenticateWithCredential(user, credential);
-      }
-      await deleteUser(user);
-      navigate("/");
-    } catch (err) {
-      deletingRef.current = false;
-      if (err.code === "auth/wrong-password" || err.code === "auth/invalid-credential") {
-        toast.error("Password is incorrect.");
-      } else if (err.code === "auth/requires-recent-login") {
-        toast.error("Session expired. Please sign out and sign in again before deleting.");
-      } else {
-        toast.error("Failed to delete account. Try again.");
-      }
-    } finally {
-      setDeleting(false);
     }
   };
 
@@ -307,87 +276,6 @@ function Profile() {
           )}
         </div>
 
-        {/* Danger Zone */}
-        <div className="bg-white rounded-2xl shadow-sm border border-red-200 p-6">
-          <h2 className="text-base font-semibold text-red-600 mb-1">Danger Zone</h2>
-          <p className="text-sm text-gray-500 mb-4">
-            Permanently delete your account and all associated data. This action cannot be undone.
-          </p>
-          <button
-            type="button"
-            onClick={() => setShowDeleteModal(true)}
-            className="border border-red-500 text-red-500 hover:bg-red-50 px-5 py-2.5 rounded-lg text-sm font-semibold transition"
-          >
-            Delete account
-          </button>
-        </div>
-
-      </div>
-
-      {/* Delete confirmation modal */}
-      {showDeleteModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
-          <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center shrink-0">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-red-600" viewBox="0 0 24 24" fill="currentColor">
-                  <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v12a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
-                </svg>
-              </div>
-              <div>
-                <h3 className="text-lg font-bold text-gray-900">Delete account</h3>
-                <p className="text-sm text-gray-500">This cannot be undone.</p>
-              </div>
-            </div>
-
-            <p className="text-sm text-gray-600 mb-5">
-              All your account data will be permanently deleted. Type <strong>DELETE</strong> to confirm.
-            </p>
-
-            <div className="flex flex-col gap-4">
-              {isEmailUser && (
-                <div>
-                  <label className={labelClass}>Your password</label>
-                  <input
-                    type="password"
-                    value={deletePw}
-                    onChange={(e) => setDeletePw(e.target.value)}
-                    placeholder="Enter your password"
-                    className={inputClass}
-                  />
-                </div>
-              )}
-              <div>
-                <label className={labelClass}>Type DELETE to confirm</label>
-                <input
-                  type="text"
-                  value={deleteConfirm}
-                  onChange={(e) => setDeleteConfirm(e.target.value)}
-                  placeholder="DELETE"
-                  className={inputClass}
-                />
-              </div>
-              <div className="flex gap-3 mt-2">
-                <button
-                  type="button"
-                  onClick={() => { setShowDeleteModal(false); setDeleteConfirm(""); setDeletePw(""); }}
-                  className="flex-1 border border-gray-300 text-gray-700 hover:bg-gray-50 py-2.5 rounded-lg text-sm font-semibold transition"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={handleDeleteAccount}
-                  disabled={deleting || deleteConfirm !== "DELETE"}
-                  className="flex-1 bg-red-500 hover:bg-red-600 disabled:opacity-50 text-white py-2.5 rounded-lg text-sm font-semibold transition"
-                >
-                  {deleting ? "Deleting..." : "Delete account"}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       <ToastContainer position="top-center" autoClose={4000} hideProgressBar={false} closeOnClick theme="colored" />
     </div>

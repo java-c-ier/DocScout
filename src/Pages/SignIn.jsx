@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import PageTransition from "../Components/PageTransition";
 import {
   signInWithEmailAndPassword,
@@ -10,8 +10,14 @@ import {
   updateProfile,
   signOut,
 } from "firebase/auth";
-import { auth } from "./../Firebase";
+import { collection, doc, getDoc, getDocs, query, where, setDoc, serverTimestamp } from "firebase/firestore";
+import { auth, db } from "./../Firebase";
 import { useNavigate, useSearchParams } from "react-router";
+import { useAuth } from "../AuthContext";
+
+const ADMIN_EMAIL = "jimutksahoo99@gmail.com";
+const MSG_NOT_FOUND = "No account found for the entered email. Please create an account for login.";
+const MSG_INACTIVE = "Your account is inactive. Please contact your admin or fill the contact form.";
 
 const EyeIcon = ({ open }) =>
   open ? (
@@ -40,6 +46,14 @@ function SignIn() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [tab, setTab] = useState(searchParams.get("tab") === "signup" ? "signup" : "login");
+  const { blockedError, clearBlockedError } = useAuth();
+
+  useEffect(() => {
+    if (blockedError) {
+      setError(blockedError);
+      clearBlockedError();
+    }
+  }, [blockedError]);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -89,18 +103,32 @@ function SignIn() {
     setLoading(true);
     try {
       if (tab === "login") {
+        const userQ = query(collection(db, "users"), where("email", "==", email));
+        const userSnap = await getDocs(userQ);
+        if (userSnap.empty) { setError(MSG_NOT_FOUND); return; }
+        if (userSnap.docs[0].data().blocked) { setError(MSG_INACTIVE); return; }
         const cred = await signInWithEmailAndPassword(auth, email, password);
         if (!cred.user.emailVerified) {
+          await sendEmailVerification(cred.user);
           await signOut(auth);
           setVerificationEmail(email);
           setVerificationSource("login");
           setVerificationSent(true);
+          startResendCooldown();
           return;
         }
         navigateHome();
       } else {
         const cred = await createUserWithEmailAndPassword(auth, email, password);
-        if (fullName.trim()) await updateProfile(cred.user, { displayName: fullName.trim() });
+        const name = fullName.trim();
+        if (name) await updateProfile(cred.user, { displayName: name });
+        await setDoc(doc(db, "users", cred.user.uid), {
+          email: cred.user.email,
+          displayName: name || "",
+          role: cred.user.email === ADMIN_EMAIL ? "admin" : "user",
+          provider: "password",
+          createdAt: serverTimestamp(),
+        });
         await sendEmailVerification(cred.user);
         await signOut(auth);
         setVerificationEmail(email);
@@ -109,7 +137,21 @@ function SignIn() {
         startResendCooldown();
       }
     } catch (err) {
-      setError(err.message.replace("Firebase: ", "").replace(/\(auth\/.*\)\.?/, "").trim());
+      if (err.code === "auth/email-already-in-use" && tab === "signup") {
+        const q = query(collection(db, "users"), where("email", "==", email), where("blocked", "==", true));
+        const snap = await getDocs(q);
+        if (!snap.empty) { setError(MSG_INACTIVE); return; }
+      }
+      const code = err.code || "";
+      if (code === "auth/invalid-credential" || code === "auth/wrong-password" || code === "auth/user-not-found") {
+        setError("Invalid email or password.");
+      } else if (code === "auth/too-many-requests") {
+        setError("Too many failed attempts. Try again later or reset your password.");
+      } else if (code === "auth/user-disabled") {
+        setError(MSG_INACTIVE);
+      } else {
+        setError(err.message.replace("Firebase: ", "").replace(/\(auth\/.*\)\.?/, "").trim() || "Something went wrong. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
@@ -132,11 +174,16 @@ function SignIn() {
 
   const handleGoogle = async () => {
     setError("");
+    setLoading(true);
     try {
       await signInWithPopup(auth, googleProvider);
       navigateHome();
     } catch (err) {
-      setError(err.message.replace("Firebase: ", "").replace(/\(auth\/.*\)\.?/, "").trim());
+      const code = err.code || "";
+      if (code === "auth/popup-closed-by-user" || code === "auth/cancelled-popup-request") return;
+      setError(err.message.replace("Firebase: ", "").replace(/\(auth\/.*\)\.?/, "").trim() || "Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 

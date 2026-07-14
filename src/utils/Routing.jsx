@@ -4,10 +4,12 @@ import Home from "../Pages/Home";
 import Nav from "../Components/Nav";
 import CSVUpload from "../Components/CSVUpload";
 import CSVUploadDoctors from "../Components/CSVUploadDoctors";
+import ProtectedRoute from "../Components/ProtectedRoute";
 
 const SignIn = lazy(() => import("../Pages/SignIn"));
 const SignUp = lazy(() => import("../Pages/SignUp"));
 const Profile = lazy(() => import("../Pages/Profile"));
+const Admin = lazy(() => import("../Pages/Admin"));
 
 function Routing() {
   const location = useLocation();
@@ -24,6 +26,11 @@ function Routing() {
           <Route path="/signin" element={<SignIn />} />
           <Route path="/signup" element={<SignUp />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/admin" element={
+            <ProtectedRoute requiredRole="admin">
+              <Admin />
+            </ProtectedRoute>
+          } />
         </Routes>
       </Suspense>
     </div>

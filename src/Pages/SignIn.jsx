@@ -422,8 +422,8 @@ function SignIn() {
           </div>
 
           <div style={{ display: "grid" }}>
-            <div style={{ gridArea: "1/1", transition: "opacity 0.22s ease, transform 0.22s ease", opacity: tab === "signup" ? 1 : 0, transform: tab === "signup" ? "translateX(0)" : "translateX(12px)", visibility: tab === "signup" ? "visible" : "hidden", pointerEvents: tab === "signup" ? "auto" : "none" }}>{formBody(false)}</div>
-            <div style={{ gridArea: "1/1", transition: "opacity 0.22s ease, transform 0.22s ease", opacity: tab === "login" ? 1 : 0, transform: tab === "login" ? "translateX(0)" : "translateX(-12px)", visibility: tab === "login" ? "visible" : "hidden", pointerEvents: tab === "login" ? "auto" : "none" }}>{formBody(true)}</div>
+            <div style={{ gridArea: "1/1", transition: "opacity 0.35s cubic-bezier(0.4,0,0.2,1), transform 0.35s cubic-bezier(0.4,0,0.2,1)", opacity: tab === "signup" ? 1 : 0, transform: tab === "signup" ? "translateX(0)" : "translateX(18px)", pointerEvents: tab === "signup" ? "auto" : "none" }}>{formBody(false)}</div>
+            <div style={{ gridArea: "1/1", transition: "opacity 0.35s cubic-bezier(0.4,0,0.2,1), transform 0.35s cubic-bezier(0.4,0,0.2,1)", opacity: tab === "login" ? 1 : 0, transform: tab === "login" ? "translateX(0)" : "translateX(-18px)", pointerEvents: tab === "login" ? "auto" : "none" }}>{formBody(true)}</div>
           </div>
 
         </div>

@@ -5,3 +5,8 @@
 
 [functions]
   included_files = ["netlify/functions/templates/**"]
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

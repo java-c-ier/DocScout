@@ -130,9 +130,7 @@ export function Nav() {
           </span>
           {!isProfilePage && <div className="mr-20 hidden lg:block">{navLinks}</div>}
           <div className="flex items-center gap-x-4">
-            {!authReady ? (
-              <div className="hidden lg:inline-flex w-8 h-8 rounded-full opacity-0 pointer-events-none" />
-            ) : user ? (
+            {!authReady ? null : user ? (
               <div className="relative hidden lg:block" ref={profileDropdownRef}>
                 <button
                   onClick={() => setProfileDropdown((v) => !v)}

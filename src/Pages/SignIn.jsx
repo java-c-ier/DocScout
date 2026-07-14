@@ -63,6 +63,15 @@ function SignIn() {
 
   const googleProvider = new GoogleAuthProvider();
 
+  const navigateHome = () => {
+    document.body.style.transition = "opacity 0.25s ease";
+    document.body.style.opacity = "0";
+    setTimeout(() => {
+      navigate("/");
+      setTimeout(() => { document.body.style.opacity = "1"; }, 50);
+    }, 250);
+  };
+
   const startResendCooldown = () => {
     setResendCooldown(60);
     const interval = setInterval(() => {
@@ -88,7 +97,7 @@ function SignIn() {
           setVerificationSent(true);
           return;
         }
-        navigate("/");
+        navigateHome();
       } else {
         const cred = await createUserWithEmailAndPassword(auth, email, password);
         if (fullName.trim()) await updateProfile(cred.user, { displayName: fullName.trim() });
@@ -125,7 +134,7 @@ function SignIn() {
     setError("");
     try {
       await signInWithPopup(auth, googleProvider);
-      navigate("/");
+      navigateHome();
     } catch (err) {
       setError(err.message.replace("Firebase: ", "").replace(/\(auth\/.*\)\.?/, "").trim());
     }

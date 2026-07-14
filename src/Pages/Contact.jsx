@@ -60,6 +60,8 @@ export function Contact() {
             src={customer}
             alt="Contact"
             className="w-full max-h-[860px] object-contain rounded-xl hidden lg:block"
+            loading="lazy"
+            decoding="async"
           />
 
           <form

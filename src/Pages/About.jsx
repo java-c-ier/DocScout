@@ -7,7 +7,7 @@ function About() {
   return (
     <div className="about-section" id="about">
       <div className="about-image-content">
-        <img src={Doctor} alt="Doctor Group" className="about-image1" />
+        <img src={Doctor} alt="Doctor Group" className="about-image1" loading="lazy" decoding="async" />
       </div>
 
       <div className="about-text-content">

@@ -306,7 +306,7 @@ function Hero() {
         </div>
 
         <div className="hero-image-section">
-          <img className="hero-image1" src={Doctor} alt="Doctor" />
+          <img className="hero-image1" src={Doctor} alt="Doctor" fetchpriority="high" decoding="async" />
         </div>
       </div>
 

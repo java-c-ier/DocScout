@@ -252,7 +252,7 @@ function Hero() {
                   <button
                     onClick={handleSearchButtonClick}
                     aria-label="Search"
-                    className="absolute right-0 top-0 h-full flex items-center pl-2.5 pr-3 border-l-2 border-blue-300 text-blue-600 cursor-pointer rounded-r-lg hover:bg-blue-50 transition"
+                    className="absolute right-0 top-0 h-full flex items-center pl-2.5 pr-3 border-l border-blue-300 text-blue-600 cursor-pointer rounded-r-lg hover:bg-blue-50 transition"
                   >
                     <TbSearch className="w-5 h-5" />
                   </button>
@@ -276,7 +276,7 @@ function Hero() {
                   <button
                     onClick={handleSearchButtonClick}
                     aria-label="Search"
-                    className="absolute right-0 top-0 h-full flex items-center pl-2.5 pr-3 border-l-2 border-blue-300 text-blue-600 cursor-pointer rounded-r-lg hover:bg-blue-50 transition"
+                    className="absolute right-0 top-0 h-full flex items-center pl-2.5 pr-3 border-l border-blue-300 text-blue-600 cursor-pointer rounded-r-lg hover:bg-blue-50 transition"
                   >
                     <TbSearch className="w-5 h-5" />
                   </button>

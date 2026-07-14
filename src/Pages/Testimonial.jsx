@@ -74,8 +74,6 @@ function Testimonial() {
             animation: "marquee-scroll 30s linear infinite",
             width: "max-content",
           }}
-          onMouseEnter={(e) => (e.currentTarget.style.animationPlayState = "paused")}
-          onMouseLeave={(e) => (e.currentTarget.style.animationPlayState = "running")}
         >
           {/* Duplicate for seamless loop */}
           {[...testimonials, ...testimonials].map((t, i) => (

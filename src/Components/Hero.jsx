@@ -206,11 +206,21 @@ function Hero() {
     );
   };
 
-  const handleSearchButtonClick = () => {
+  const handleLocationSearchClick = () => {
     if (districts.includes(searchInput)) {
       fetchHospitals();
     } else {
       toast.error("Please enter a valid district!", { toastId: "invalid-district" });
+    }
+  };
+
+  const handleDiseaseSearchClick = () => {
+    if (!districts.includes(searchInput)) {
+      toast.error("Please enter a valid district first!", { toastId: "invalid-district" });
+    } else if (!diseases.includes(diseaseInput)) {
+      toast.error("Please enter a valid disease or specialty!", { toastId: "invalid-disease" });
+    } else {
+      fetchHospitals();
     }
   };
 
@@ -254,7 +264,7 @@ function Hero() {
                     onFocus={() => { setFilteredDistricts(districts); setFilteredDiseases([]); }}
                   />
                   <button
-                    onClick={handleSearchButtonClick}
+                    onClick={handleLocationSearchClick}
                     aria-label="Search"
                     className="absolute right-0 top-0 h-full flex items-center pl-2.5 pr-3 border-l border-blue-300 text-blue-600 cursor-pointer"
                   >
@@ -278,7 +288,7 @@ function Hero() {
                     onFocus={() => { setFilteredDiseases(diseases); setFilteredDistricts([]); }}
                   />
                   <button
-                    onClick={handleSearchButtonClick}
+                    onClick={handleDiseaseSearchClick}
                     aria-label="Search"
                     className="absolute right-0 top-0 h-full flex items-center pl-2.5 pr-3 border-l border-blue-300 text-blue-600 cursor-pointer"
                   >

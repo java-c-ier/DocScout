@@ -1,5 +1,5 @@
 import React, { useRef, useState } from "react";
-import { ToastContainer, toast } from "react-toastify";
+import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import customer from "../assets/customer.png";
 
@@ -128,15 +128,6 @@ export function Contact() {
         </div>
       </div>
 
-      <ToastContainer
-        position="top-center"
-        autoClose={4000}
-        hideProgressBar={false}
-        closeOnClick
-        pauseOnHover
-        theme="colored"
-        style={{ width: "400px" }}
-      />
     </section>
   );
 }

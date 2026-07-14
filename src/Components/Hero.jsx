@@ -237,7 +237,7 @@ function Hero() {
 
           <div className="search-area w-full flex flex-col sm:flex-row sm:items-stretch gap-5" ref={searchBoxRef}>
             {/* District Search */}
-            <div className="search-box w-full sm:w-[30%] relative">
+            <div className="search-box w-full sm:w-[220px] relative">
               <div className="relative">
                 <input
                   type="text"
@@ -261,7 +261,7 @@ function Hero() {
             </div>
 
             {/* Disease Search */}
-            <div className="search-box w-full sm:w-[30%] relative">
+            <div className="search-box w-full sm:w-[220px] relative">
               <div className="relative">
                 <input
                   type="text"

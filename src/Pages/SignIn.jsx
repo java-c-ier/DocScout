@@ -11,7 +11,7 @@ import {
 } from "firebase/auth";
 import { collection, doc, getDoc, getDocs, query, where, setDoc, serverTimestamp } from "firebase/firestore";
 import { auth, db } from "./../Firebase";
-import { useNavigate, useSearchParams } from "react-router";
+import { useNavigate, useLocation } from "react-router";
 import { useAuth } from "../AuthContext";
 
 const ADMIN_EMAIL = "jimutksahoo99@gmail.com";
@@ -43,8 +43,8 @@ const GoogleIcon = () => (
 
 function SignIn() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const [tab, setTab] = useState(searchParams.get("tab") === "signup" ? "signup" : "login");
+  const location = useLocation();
+  const [tab, setTab] = useState(location.pathname === "/signup" ? "signup" : "login");
   const { blockedError, clearBlockedError } = useAuth();
 
   useEffect(() => {
@@ -224,6 +224,7 @@ function SignIn() {
     setEmail("");
     setPassword("");
     setFullName("");
+    navigate(t === "signup" ? "/signup" : "/signin", { replace: true });
   };
 
   const inputClass =

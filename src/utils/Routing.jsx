@@ -25,7 +25,7 @@ function Routing() {
           <Route path="/upload" element={<CSVUpload />} />
           <Route path="/uploadDoctors" element={<CSVUploadDoctors />} />
           <Route path="/signin" element={<SignIn />} />
-          <Route path="/signup" element={<SignUp />} />
+          <Route path="/signup" element={<SignIn />} />
           <Route path="/verify-email" element={<VerifyEmail />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/admin" element={

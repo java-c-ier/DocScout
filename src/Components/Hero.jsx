@@ -244,7 +244,7 @@ function Hero() {
                   <input
                     type="text"
                     placeholder="Enter Location"
-                    className="w-full border-2 border-blue-400 rounded-lg px-4 py-2 pr-10 text-[16px] bg-white focus:outline-none focus:border-blue-600"
+                    className="w-full border-2 border-blue-400 rounded-lg px-4 py-2.5 pr-10 text-[16px] bg-white focus:outline-none focus:border-blue-600"
                     value={searchInput}
                     onChange={handleSearch}
                     onFocus={() => { setFilteredDistricts(districts); setFilteredDiseases([]); }}
@@ -268,7 +268,7 @@ function Hero() {
                   <input
                     type="text"
                     placeholder="Enter Disease"
-                    className="w-full border-2 border-blue-400 rounded-lg px-4 py-2 pr-10 text-[16px] bg-white focus:outline-none focus:border-blue-600"
+                    className="w-full border-2 border-blue-400 rounded-lg px-4 py-2.5 pr-10 text-[16px] bg-white focus:outline-none focus:border-blue-600"
                     value={diseaseInput}
                     onChange={handleDiseaseSearch}
                     onFocus={() => { setFilteredDiseases(diseases); setFilteredDistricts([]); }}
@@ -291,7 +291,7 @@ function Hero() {
             <button
               onClick={handleNearbyHospitals}
               disabled={loadingNearby}
-              className="flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-600 disabled:opacity-60 text-white px-4 py-2 rounded-lg font-medium transition whitespace-nowrap w-full sm:w-[465px]"
+              className="flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-600 disabled:opacity-60 text-white px-4 py-2.5 rounded-lg font-medium transition whitespace-nowrap w-full sm:w-[465px]"
             >
               {loadingNearby ? (
                 <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">

@@ -15,6 +15,8 @@
 .about-image1 {
     width: 80%;
     height: auto;
+    image-rendering: -webkit-optimize-contrast;
+    filter: contrast(1.08) saturate(1.1) brightness(1.02);
 }
 /* Text */
 .about-text-content {

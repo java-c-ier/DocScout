@@ -32,6 +32,30 @@ function Hero() {
   const [hospitalList, setHospitalList] = useState([]);
   const [hasSearched, setHasSearched] = useState(false);
   const [loadingNearby, setLoadingNearby] = useState(false);
+  const [userCoords, setUserCoords] = useState(null);
+  const [sortingByDistance, setSortingByDistance] = useState(false);
+
+  const haversine = (lat1, lon1, lat2, lon2) => {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  };
+
+  const geocodeHospital = async (name, district, index) => {
+    await new Promise(r => setTimeout(r, index * 150));
+    try {
+      const q = encodeURIComponent(`${name}, ${district}, Odisha, India`);
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1`,
+        { headers: { "Accept-Language": "en", "User-Agent": "DocScout/1.0" } }
+      );
+      const data = await res.json();
+      if (data.length > 0) return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+    } catch {}
+    return null;
+  };
 
   const searchBoxRef = useRef(null);
   const hospitalListRef = useRef(null);
@@ -64,6 +88,8 @@ function Hero() {
 
   const fetchHospitals = async () => {
     if (!db) { toast.error("Firebase not configured."); return; }
+    setUserCoords(null);
+    setSortingByDistance(false);
     try {
       const hospitalsCollection = collection(db, "Odisha", searchInput, "Hospitals");
       const snapshot = await getDocs(hospitalsCollection);
@@ -129,16 +155,37 @@ function Hero() {
           if (!db) { showResult("error", "Firebase not configured."); setLoadingNearby(false); return; }
           const snapshot = await getDocs(collection(db, "Odisha", detectedDistrict, "Hospitals"));
           const hospitalsData = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+
           setHospitalList(hospitalsData);
           setHasSearched(true);
+          setUserCoords({ lat: latitude, lng: longitude });
           setLoadingNearby(false);
 
           if (hospitalsData.length === 0) {
             showResult("info", `No hospitals found for ${detectedDistrict} in database.`);
-          } else {
-            showResult("success", `Found ${hospitalsData.length} hospitals in ${detectedDistrict}!`);
+            scrollToHospitals();
+            return;
           }
+
+          showResult("success", `Found ${hospitalsData.length} hospitals in ${detectedDistrict}!`);
           scrollToHospitals();
+
+          // Geocode + sort by distance in background
+          setSortingByDistance(true);
+          (async () => {
+            const withDistances = await Promise.all(
+              hospitalsData.map(async (hospital, i) => {
+                const coords = await geocodeHospital(hospital.Name, detectedDistrict, i);
+                const distance = coords
+                  ? haversine(latitude, longitude, coords.lat, coords.lng)
+                  : Infinity;
+                return { ...hospital, distance };
+              })
+            );
+            withDistances.sort((a, b) => a.distance - b.distance);
+            setHospitalList(withDistances);
+            setSortingByDistance(false);
+          })();
         } catch {
           showResult("error", "Location detection failed. Try searching manually.");
           setLoadingNearby(false);
@@ -264,7 +311,7 @@ function Hero() {
       </div>
 
       <div ref={hospitalListRef} className={`${hospitalList.length > 0 ? "px-4 py-6" : ""}`}>
-        <Hospitals hospitals={hospitalList} hasSearched={hasSearched} searchedDistrict={searchInput} />
+        <Hospitals hospitals={hospitalList} hasSearched={hasSearched} searchedDistrict={searchInput} userCoords={userCoords} sortingByDistance={sortingByDistance} />
       </div>
 
       <ToastContainer

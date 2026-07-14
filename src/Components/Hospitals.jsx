@@ -40,7 +40,7 @@ function Modal({ open, onClose, title, children, footer, wide }) {
   );
 }
 
-const Hospitals = ({ hospitals, hasSearched, searchedDistrict }) => {
+const Hospitals = ({ hospitals, hasSearched, searchedDistrict, userCoords, sortingByDistance }) => {
   const [activePage, setActivePage] = useState(1);
   const [showNoHospitalsMessage, setShowNoHospitalsMessage] = useState(false);
   const [isDataFetched, setIsDataFetched] = useState(false);
@@ -161,8 +161,26 @@ const Hospitals = ({ hospitals, hasSearched, searchedDistrict }) => {
   const toggleDeptAccordion = (deptName) =>
     setDeptExpanded((prev) => ({ ...prev, [deptName]: !prev[deptName] }));
 
+  const showDistance = !!userCoords;
+
+  const formatDistance = (d) => {
+    if (d === undefined || d === null) return "—";
+    if (d === Infinity) return "—";
+    if (d < 1) return "< 1 km";
+    return `${d.toFixed(1)} km`;
+  };
+
   return (
     <div className="overflow-x-auto w-full">
+      {sortingByDistance && (
+        <div className="flex items-center gap-2 mb-3 text-sm text-blue-600 font-medium">
+          <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+          </svg>
+          Sorting by distance from your location...
+        </div>
+      )}
       <table className="min-w-full bg-white border border-gray-300 shadow-md rounded-lg overflow-hidden">
         <thead>
           <tr className="bg-gray-200 text-gray-700">
@@ -170,6 +188,7 @@ const Hospitals = ({ hospitals, hasSearched, searchedDistrict }) => {
             <th className="px-4 py-2 text-center">Contact</th>
             <th className="px-4 py-2 text-center">Type</th>
             <th className="px-4 py-2 text-center">Rating</th>
+            {showDistance && <th className="px-4 py-2 text-center">Distance</th>}
             <th className="px-4 py-2 text-center">Website</th>
             <th className="px-4 py-2 text-center">Google Map Link</th>
             <th className="text-center px-4 py-2">Review</th>
@@ -191,6 +210,11 @@ const Hospitals = ({ hospitals, hasSearched, searchedDistrict }) => {
               <td className="px-4 py-3 text-center">{hospital.Contact || "N/A"}</td>
               <td className="px-4 py-3 text-center">{hospital.Type || "N/A"}</td>
               <td className="px-4 py-3 text-center">{hospital.Rating || 0}</td>
+              {showDistance && (
+                <td className="px-4 py-3 text-center text-sm font-medium text-blue-600">
+                  {sortingByDistance ? "..." : formatDistance(hospital.distance)}
+                </td>
+              )}
               <td className="px-4 py-3 text-center">
                 {hospital.Website ? (
                   <a href={hospital.Website} target="_blank" rel="noopener noreferrer" className="text-blue-500">Visit</a>

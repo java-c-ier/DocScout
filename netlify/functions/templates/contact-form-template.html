@@ -1,90 +1,88 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>New Contact Message — DocScout</title>
-  <style>
-    @media only screen and (max-width: 600px) {
-      .email-wrapper { padding: 16px 0 !important; }
-      .email-card { width: 100% !important; }
-      .email-header { padding: 28px 24px !important; }
-      .email-header h1 { font-size: 30px !important; }
-      .email-body { padding: 24px !important; }
-      .email-footer { padding: 20px 24px !important; }
-      .field-block { padding: 14px 16px !important; }
-    }
-  </style>
 </head>
-<body style="margin:0;padding:0;background-color:#f4f4f5;font-family:'Segoe UI',Arial,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" class="email-wrapper" style="background-color:#f4f4f5;padding:40px 0;">
+<body style="margin:0;padding:0;background-color:#f4f7fb;font-family:'Segoe UI',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f7fb;padding:40px 0;">
     <tr>
-      <td align="center" style="padding:0 16px;">
-        <table width="100%" cellpadding="0" cellspacing="0" class="email-card" style="max-width:580px;background-color:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
 
           <!-- Header -->
           <tr>
-            <td class="email-header" style="background:linear-gradient(135deg,#1a8efd 0%,#0066cc 100%);padding:36px 40px;text-align:center;">
-              <h1 style="margin:0;color:#ffffff;font-size:38px;font-weight:700;letter-spacing:1px;">DocScout</h1>
-              <p style="margin:8px 0 0;color:#cce4ff;font-size:13px;letter-spacing:2px;text-transform:uppercase;">New Contact Message</p>
+            <td style="background:linear-gradient(135deg,#1a8efd,#0056c7);padding:36px 40px;text-align:center;">
+              <h1 style="margin:0;color:#ffffff;font-size:28px;font-weight:800;letter-spacing:-0.5px;">DocScout</h1>
+              <p style="margin:6px 0 0;color:rgba(255,255,255,0.8);font-size:13px;letter-spacing:0.5px;">New Contact Message</p>
             </td>
           </tr>
 
           <!-- Body -->
           <tr>
-            <td class="email-body" style="padding:40px;">
-              <p style="margin:0 0 24px;color:#374151;font-size:15px;line-height:1.6;text-align:center;">
-                You received a new message from the DocScout.
+            <td style="padding:40px 40px 32px;">
+
+              <p style="margin:0 0 20px;font-size:15px;color:#4b5563;line-height:1.7;">
+                You received a new message via the DocScout contact form.
               </p>
 
-              <!-- Name -->
-              <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:16px;">
+              <!-- Divider -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin:8px 0 28px;">
                 <tr>
-                  <td class="field-block" style="background-color:#f0f7ff;border-left:4px solid #1a8efd;border-radius:0 8px 8px 0;padding:16px 20px;">
-                    <p style="margin:0 0 4px;color:#6b7280;font-size:11px;text-transform:uppercase;letter-spacing:1px;font-weight:600;">Name</p>
-                    <p style="margin:0;color:#111827;font-size:16px;font-weight:600;">{{first-name}} {{last-name}}</p>
+                  <td style="border-top:1px solid #e5e7eb;"></td>
+                </tr>
+              </table>
+
+              <!-- Details box -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8faff;border:1.5px solid #93c5fd;border-radius:8px;padding:0;">
+                <tr>
+                  <td style="padding:20px 24px;">
+                    <p style="margin:0 0 12px;font-size:13px;font-weight:600;color:#1a8efd;text-transform:uppercase;letter-spacing:0.5px;">Submission Details</p>
+                    <table width="100%" cellpadding="0" cellspacing="0">
+                      <tr>
+                        <td style="padding:5px 0;font-size:13px;color:#6b7280;width:80px;vertical-align:top;">Name</td>
+                        <td style="padding:5px 0;font-size:13px;color:#111827;font-weight:500;">{{first-name}} {{last-name}}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding:5px 0;font-size:13px;color:#6b7280;vertical-align:top;">Email</td>
+                        <td style="padding:5px 0;font-size:13px;color:#111827;font-weight:500;">{{email}}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding:5px 0;font-size:13px;color:#6b7280;vertical-align:top;">Phone</td>
+                        <td style="padding:5px 0;font-size:13px;color:#111827;font-weight:500;">+91 {{phone}}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding:5px 0;font-size:13px;color:#6b7280;vertical-align:top;">Message</td>
+                        <td style="padding:5px 0;font-size:13px;color:#111827;line-height:1.6;">{{message}}</td>
+                      </tr>
+                    </table>
                   </td>
                 </tr>
               </table>
 
-              <!-- Email -->
-              <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:16px;">
+              <!-- Divider -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin:28px 0;">
                 <tr>
-                  <td class="field-block" style="background-color:#f0f7ff;border-left:4px solid #1a8efd;border-radius:0 8px 8px 0;padding:16px 20px;">
-                    <p style="margin:0 0 4px;color:#6b7280;font-size:11px;text-transform:uppercase;letter-spacing:1px;font-weight:600;">Email</p>
-                    <p style="margin:0;color:#111827;font-size:16px;font-weight:600;word-break:break-all;">{{email}}</p>
-                  </td>
+                  <td style="border-top:1px solid #e5e7eb;"></td>
                 </tr>
               </table>
 
-              <!-- Phone -->
-              <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:16px;">
-                <tr>
-                  <td class="field-block" style="background-color:#f0f7ff;border-left:4px solid #1a8efd;border-radius:0 8px 8px 0;padding:16px 20px;">
-                    <p style="margin:0 0 4px;color:#6b7280;font-size:11px;text-transform:uppercase;letter-spacing:1px;font-weight:600;">Phone</p>
-                    <p style="margin:0;color:#111827;font-size:16px;font-weight:600;">+91 {{phone}}</p>
-                  </td>
-                </tr>
-              </table>
-
-              <!-- Message -->
-              <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:8px;">
-                <tr>
-                  <td class="field-block" style="background-color:#f0f7ff;border-left:4px solid #1a8efd;border-radius:0 8px 8px 0;padding:16px 20px;">
-                    <p style="margin:0 0 10px;color:#6b7280;font-size:11px;text-transform:uppercase;letter-spacing:1px;font-weight:600;">Message</p>
-                    <p style="margin:0;color:#374151;font-size:15px;line-height:1.7;white-space:pre-wrap;word-break:break-word;">{{message}}</p>
-                  </td>
-                </tr>
-              </table>
+              <p style="margin:0;font-size:15px;color:#374151;">
+                Reply directly to this email to respond to <strong>{{first-name}}</strong>.
+              </p>
 
             </td>
           </tr>
 
           <!-- Footer -->
           <tr>
-            <td class="email-footer" style="background-color:#f9fafb;padding:24px 40px;text-align:center;border-top:1px solid #e5e7eb;">
-              <p style="margin:0;color:#9ca3af;font-size:12px;">
-                Sent from the DocScout Contact Form
+            <td style="background:#e5e7eb;border-top:1px solid #d1d5db;padding:20px 40px;text-align:center;">
+              <p style="margin:0;font-size:12px;color:#4b5563;">
+                This is an automated notification from DocScout.
+              </p>
+              <p style="margin:8px 0 0;font-size:12px;color:#4b5563;">
+                &copy; 2026 DocScout. All rights reserved.
               </p>
             </td>
           </tr>

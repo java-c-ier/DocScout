@@ -107,6 +107,17 @@ export function Nav() {
           </a>
         </li>
       ))}
+      {user && (
+        <li className="p-1 font-normal text-blue-gray-700">
+          <NavLink
+            className="hover-links flex items-center"
+            to="/upload"
+            onClick={closeNav}
+          >
+            Upload
+          </NavLink>
+        </li>
+      )}
     </ul>
   );
 
@@ -234,6 +245,11 @@ export function Nav() {
                 <NavLink to="/profile" className="w-full" onClick={closeNav}>
                   <button className="w-full bg-blue-50 text-blue-600 border border-blue-200 py-2 rounded flex items-center justify-center h-10 font-medium text-sm">
                     My Profile
+                  </button>
+                </NavLink>
+                <NavLink to="/upload" className="w-full" onClick={closeNav}>
+                  <button className="w-full bg-blue-50 text-blue-600 border border-blue-200 py-2 rounded flex items-center justify-center h-10 font-medium text-sm">
+                    Upload
                   </button>
                 </NavLink>
                 <button

@@ -40,6 +40,7 @@ export function AuthProvider({ children }) {
               displayName: firebaseUser.displayName || "",
               role: assignedRole,
               provider: firebaseUser.providerData?.[0]?.providerId || "unknown",
+              emailVerified: isGoogle,
               createdAt: serverTimestamp(),
             });
             setRole(assignedRole);

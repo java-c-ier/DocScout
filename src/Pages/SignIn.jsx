@@ -5,7 +5,6 @@ import {
   createUserWithEmailAndPassword,
   GoogleAuthProvider,
   signInWithPopup,
-  sendEmailVerification,
   sendPasswordResetEmail,
   updateProfile,
   signOut,
@@ -64,8 +63,10 @@ function SignIn() {
 
   // Email verification screen
   const [verificationSent, setVerificationSent] = useState(false);
-  const [verificationSource, setVerificationSource] = useState("signup"); // "signup" | "login"
+  const [verificationSource, setVerificationSource] = useState("signup");
   const [verificationEmail, setVerificationEmail] = useState("");
+  const [pendingUid, setPendingUid] = useState(null);
+  const [pendingDisplayName, setPendingDisplayName] = useState("");
   const [resending, setResending] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
 
@@ -84,6 +85,14 @@ function SignIn() {
       navigate("/");
       setTimeout(() => { document.body.style.opacity = "1"; }, 50);
     }, 250);
+  };
+
+  const sendVerificationEmail = async (uid, emailAddr, displayName, source) => {
+    await fetch("/.netlify/functions/send-verification", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ uid, email: emailAddr, displayName, source, origin: window.location.origin }),
+    });
   };
 
   const startResendCooldown = () => {
@@ -106,17 +115,22 @@ function SignIn() {
         const userQ = query(collection(db, "users"), where("email", "==", email));
         const userSnap = await getDocs(userQ);
         if (userSnap.empty) { setError(MSG_NOT_FOUND); return; }
-        if (userSnap.docs[0].data().blocked) { setError(MSG_INACTIVE); return; }
-        const cred = await signInWithEmailAndPassword(auth, email, password);
-        if (!cred.user.emailVerified) {
-          await sendEmailVerification(cred.user);
+        const userData = userSnap.docs[0].data();
+        const uid = userSnap.docs[0].id;
+        if (userData.blocked) { setError(MSG_INACTIVE); return; }
+        if (!userData.emailVerified) {
+          const cred = await signInWithEmailAndPassword(auth, email, password);
           await signOut(auth);
+          await sendVerificationEmail(uid, email, userData.displayName || "", "login");
+          setPendingUid(uid);
+          setPendingDisplayName(userData.displayName || "");
           setVerificationEmail(email);
           setVerificationSource("login");
           setVerificationSent(true);
           startResendCooldown();
           return;
         }
+        await signInWithEmailAndPassword(auth, email, password);
         navigateHome();
       } else {
         const cred = await createUserWithEmailAndPassword(auth, email, password);
@@ -127,10 +141,13 @@ function SignIn() {
           displayName: name || "",
           role: cred.user.email === ADMIN_EMAIL ? "admin" : "user",
           provider: "password",
+          emailVerified: false,
           createdAt: serverTimestamp(),
         });
-        await sendEmailVerification(cred.user);
         await signOut(auth);
+        await sendVerificationEmail(cred.user.uid, cred.user.email, name, "signup");
+        setPendingUid(cred.user.uid);
+        setPendingDisplayName(name);
         setVerificationEmail(email);
         setVerificationSource("signup");
         setVerificationSent(true);
@@ -158,12 +175,10 @@ function SignIn() {
   };
 
   const handleResendVerification = async () => {
-    if (resendCooldown > 0) return;
+    if (resendCooldown > 0 || !pendingUid) return;
     setResending(true);
     try {
-      const cred = await signInWithEmailAndPassword(auth, email, password);
-      await sendEmailVerification(cred.user);
-      await signOut(auth);
+      await sendVerificationEmail(pendingUid, verificationEmail, pendingDisplayName, verificationSource);
       startResendCooldown();
     } catch {
       // ignore

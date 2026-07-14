@@ -10,6 +10,7 @@ const SignIn = lazy(() => import("../Pages/SignIn"));
 const SignUp = lazy(() => import("../Pages/SignUp"));
 const Profile = lazy(() => import("../Pages/Profile"));
 const Admin = lazy(() => import("../Pages/Admin"));
+const VerifyEmail = lazy(() => import("../Pages/VerifyEmail"));
 
 function Routing() {
   const location = useLocation();
@@ -25,6 +26,7 @@ function Routing() {
           <Route path="/uploadDoctors" element={<CSVUploadDoctors />} />
           <Route path="/signin" element={<SignIn />} />
           <Route path="/signup" element={<SignUp />} />
+          <Route path="/verify-email" element={<VerifyEmail />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/admin" element={
             <ProtectedRoute requiredRole="admin">

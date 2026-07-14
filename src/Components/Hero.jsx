@@ -244,7 +244,7 @@ function Hero() {
                   <input
                     type="text"
                     placeholder="Enter Location"
-                    className="w-full border-2 border-blue-400 rounded-lg px-4 py-2.5 pr-10 text-[16px] bg-white focus:outline-none focus:border-blue-600"
+                    className="w-full border-2 border-blue-400 rounded-lg px-4 py-2.5 pr-12 text-[16px] bg-white shadow-md focus:outline-none focus:border-blue-600"
                     value={searchInput}
                     onChange={handleSearch}
                     onFocus={() => { setFilteredDistricts(districts); setFilteredDiseases([]); }}
@@ -252,7 +252,7 @@ function Hero() {
                   <button
                     onClick={handleSearchButtonClick}
                     aria-label="Search"
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-blue-600 cursor-pointer"
+                    className="absolute right-0 top-0 h-full flex items-center pl-2.5 pr-3 border-l-2 border-blue-300 text-blue-600 cursor-pointer rounded-r-lg hover:bg-blue-50 transition"
                   >
                     <TbSearch className="w-5 h-5" />
                   </button>
@@ -268,7 +268,7 @@ function Hero() {
                   <input
                     type="text"
                     placeholder="Enter Disease"
-                    className="w-full border-2 border-blue-400 rounded-lg px-4 py-2.5 pr-10 text-[16px] bg-white focus:outline-none focus:border-blue-600"
+                    className="w-full border-2 border-blue-400 rounded-lg px-4 py-2.5 pr-12 text-[16px] bg-white shadow-md focus:outline-none focus:border-blue-600"
                     value={diseaseInput}
                     onChange={handleDiseaseSearch}
                     onFocus={() => { setFilteredDiseases(diseases); setFilteredDistricts([]); }}
@@ -276,7 +276,7 @@ function Hero() {
                   <button
                     onClick={handleSearchButtonClick}
                     aria-label="Search"
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-blue-600 cursor-pointer"
+                    className="absolute right-0 top-0 h-full flex items-center pl-2.5 pr-3 border-l-2 border-blue-300 text-blue-600 cursor-pointer rounded-r-lg hover:bg-blue-50 transition"
                   >
                     <TbSearch className="w-5 h-5" />
                   </button>

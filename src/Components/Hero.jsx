@@ -58,6 +58,8 @@ function Hero() {
   };
 
   const searchBoxRef = useRef(null);
+  const locationBoxRef = useRef(null);
+  const diseaseBoxRef = useRef(null);
   const hospitalListRef = useRef(null);
 
   const handleSearch = (e) => {
@@ -214,8 +216,10 @@ function Hero() {
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (searchBoxRef.current && !searchBoxRef.current.contains(event.target)) {
+      if (locationBoxRef.current && !locationBoxRef.current.contains(event.target)) {
         setFilteredDistricts([]);
+      }
+      if (diseaseBoxRef.current && !diseaseBoxRef.current.contains(event.target)) {
         setFilteredDiseases([]);
       }
     };
@@ -239,7 +243,7 @@ function Hero() {
             {/* Row 1: search boxes */}
             <div className="flex flex-col sm:flex-row sm:items-stretch gap-3">
               {/* District Search */}
-              <div className="search-box w-full sm:w-[225px] relative">
+              <div className="search-box w-full sm:w-[225px] relative" ref={locationBoxRef}>
                 <div className="relative">
                   <input
                     type="text"
@@ -263,7 +267,7 @@ function Hero() {
               </div>
 
               {/* Disease Search */}
-              <div className="search-box w-full sm:w-[225px] relative">
+              <div className="search-box w-full sm:w-[225px] relative" ref={diseaseBoxRef}>
                 <div className="relative">
                   <input
                     type="text"

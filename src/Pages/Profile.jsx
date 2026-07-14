@@ -279,6 +279,7 @@ function Profile() {
 
       <ToastContainer position="top-center" autoClose={4000} hideProgressBar={false} closeOnClick theme="colored" />
     </div>
+  </div>
   );
 }
 

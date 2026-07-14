@@ -3,7 +3,8 @@ const path = require("path");
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 const TO_EMAIL = "jimutksahoo99@gmail.com";
-const FROM_EMAIL = "DocScout <doc-scout@jimut.in>";
+const FROM_AUTOREPLY = "DocScout <doc-scout@jimut.in>";
+const FROM_NOREPLY = "No Reply <no-reply@jimut.in>";
 
 const notificationTemplate = fs.readFileSync(path.join(__dirname, "templates/contact-form-template.html"), "utf8");
 const autoReplyTemplate = fs.readFileSync(path.join(__dirname, "templates/autoreply-template.html"), "utf8");
@@ -44,7 +45,7 @@ exports.handler = async (event) => {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${RESEND_API_KEY}` },
       body: JSON.stringify({
-        from: FROM_EMAIL,
+        from: FROM_NOREPLY,
         to: TO_EMAIL,
         subject: `New Contact Form Submission from ${firstName} ${lastName}`,
         html: fill(notificationTemplate, data),
@@ -57,7 +58,7 @@ exports.handler = async (event) => {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${RESEND_API_KEY}` },
       body: JSON.stringify({
-        from: FROM_EMAIL,
+        from: FROM_AUTOREPLY,
         to: email,
         reply_to: email,
         subject: `Thank you for contacting DocScout, ${firstName}!`,

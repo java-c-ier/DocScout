@@ -210,7 +210,7 @@ function Hero() {
     if (districts.includes(searchInput)) {
       fetchHospitals();
     } else {
-      toast.error("Please enter a valid district!");
+      toast.error("Please enter a valid district!", { toastId: "invalid-district" });
     }
   };
 

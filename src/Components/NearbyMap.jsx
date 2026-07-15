@@ -1,13 +1,6 @@
-import React, { useState, useRef } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
-
-import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
-import markerIcon from 'leaflet/dist/images/marker-icon.png';
-import markerShadow from 'leaflet/dist/images/marker-shadow.png';
-delete L.Icon.Default.prototype._getIconUrl;
-L.Icon.Default.mergeOptions({ iconUrl: markerIcon, iconRetinaUrl: markerIcon2x, shadowUrl: markerShadow });
+import React, { useState, useRef, useEffect } from 'react';
+import Map, { Marker, Popup, NavigationControl } from 'react-map-gl/maplibre';
+import 'maplibre-gl/dist/maplibre-gl.css';
 
 const haversine = (lat1, lon1, lat2, lon2) => {
   const R = 6371;
@@ -58,7 +51,6 @@ const fetchNearbyHospitals = async (lat, lng, radiusM, signal) => {
             lng: elLng,
             distance: haversine(lat, lng, elLat, elLng),
             phone: el.tags?.phone || el.tags?.['contact:phone'] || null,
-            website: el.tags?.website || el.tags?.['contact:website'] || null,
           };
         })
         .filter(Boolean)
@@ -71,41 +63,13 @@ const fetchNearbyHospitals = async (lat, lng, radiusM, signal) => {
   throw lastErr || new Error('fetch_error');
 };
 
-function FlyTo({ coords }) {
-  const map = useMap();
-  const prev = useRef(null);
-  if (coords && prev.current !== coords) {
-    prev.current = coords;
-    map.flyTo([coords.lat, coords.lng], 13, { duration: 1.2 });
-  }
-  return null;
-}
-
-
-const userIcon = () => L.divIcon({
-  className: '',
-  html: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 36" width="32" height="48">
-    <path d="M12 0C5.373 0 0 5.373 0 12c0 9 12 24 12 24s12-15 12-24C24 5.373 18.627 0 12 0z" fill="#e53e3e" stroke="#fff" stroke-width="1.5"/>
-    <circle cx="12" cy="12" r="5" fill="#fff"/>
-  </svg>`,
-  iconSize: [32, 48],
-  iconAnchor: [16, 48],
-  popupAnchor: [0, -48],
-});
-
-const rankIcon = (n) => L.divIcon({
-  className: '',
-  html: `<div style="width:26px;height:26px;background:#1a8efd;border-radius:50%;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.22);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;font-family:system-ui,sans-serif">${n}</div>`,
-  iconSize: [26, 26],
-  iconAnchor: [13, 13],
-  popupAnchor: [0, -14],
-});
-
 const RADII = [
   { label: '5 km', value: 5000 },
   { label: '10 km', value: 10000 },
   { label: '20 km', value: 20000 },
 ];
+
+const MAP_STYLE = 'https://tiles.openfreemap.org/styles/liberty';
 
 export default function NearbyMap() {
   const [phase, setPhase] = useState('idle');
@@ -114,9 +78,16 @@ export default function NearbyMap() {
   const [updating, setUpdating] = useState(false);
   const [radius, setRadius] = useState(10000);
   const [error, setError] = useState('');
+  const [popupHosp, setPopupHosp] = useState(null);
   const mapRef = useRef(null);
   const abortRef = useRef(null);
   const cacheRef = useRef({});
+
+  useEffect(() => {
+    if (userCoords && mapRef.current) {
+      mapRef.current.flyTo({ center: [userCoords.lng, userCoords.lat], zoom: 13, duration: 1200 });
+    }
+  }, [userCoords]);
 
   const doFetch = async (lat, lng, radiusM) => {
     const key = `${lat.toFixed(4)},${lng.toFixed(4)},${radiusM}`;
@@ -134,6 +105,7 @@ export default function NearbyMap() {
     setPhase('locating');
     setError('');
     setHospitals([]);
+    setPopupHosp(null);
 
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
@@ -169,6 +141,7 @@ export default function NearbyMap() {
     setRadius(newRadius);
     if (!userCoords || (phase !== 'ready' && phase !== 'fetching')) return;
     setUpdating(true);
+    setPopupHosp(null);
     try {
       const list = await doFetch(userCoords.lat, userCoords.lng, newRadius);
       setHospitals(list);
@@ -212,22 +185,16 @@ export default function NearbyMap() {
               <p className="text-gray-700 font-medium">Find hospitals wherever you are</p>
               <p className="text-gray-400 text-sm mt-1">Uses OpenStreetMap data. Your location is never stored.</p>
             </div>
-            {/* Radius selector */}
             <div className="flex items-center gap-2">
               {RADII.map(r => (
-                <button
-                  key={r.value}
-                  onClick={() => setRadius(r.value)}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium border transition ${radius === r.value ? 'bg-blue-500 text-white border-blue-500' : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300'}`}
-                >
+                <button key={r.value} onClick={() => setRadius(r.value)}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium border transition ${radius === r.value ? 'bg-blue-500 text-white border-blue-500' : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300'}`}>
                   {r.label}
                 </button>
               ))}
             </div>
-            <button
-              onClick={handleLocate}
-              className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-xl font-medium transition shadow-sm"
-            >
+            <button onClick={handleLocate}
+              className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-xl font-medium transition shadow-sm">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
                 <path fillRule="evenodd" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z" clipRule="evenodd" />
               </svg>
@@ -236,7 +203,7 @@ export default function NearbyMap() {
           </div>
         )}
 
-        {/* Locating / Fetching (only shown before we have coords — after that the map panel takes over) */}
+        {/* Locating / initial fetching */}
         {(phase === 'locating' || (phase === 'fetching' && !userCoords)) && (
           <div className="flex flex-col items-center gap-3 py-14">
             <div className="w-9 h-9 border-4 border-gray-200 border-t-blue-500 rounded-full animate-spin" />
@@ -251,9 +218,7 @@ export default function NearbyMap() {
           <div className="flex flex-col items-center gap-4 py-14">
             <div className="w-14 h-14 bg-red-50 rounded-full flex items-center justify-center">
               <svg xmlns="http://www.w3.org/2000/svg" className="w-7 h-7 text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="12" cy="12" r="10" />
-                <line x1="12" y1="8" x2="12" y2="12" />
-                <line x1="12" y1="16" x2="12.01" y2="16" />
+                <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
               </svg>
             </div>
             <p className="text-gray-600 text-sm font-medium text-center max-w-xs">{error}</p>
@@ -270,118 +235,143 @@ export default function NearbyMap() {
             Math.max(Math.min(hospitals.length, 100), Math.round(hospitals.length * 0.4 / 100) * 100)
           );
           return (
-          <div className="flex flex-col lg:flex-row gap-5 items-start w-full min-w-0" style={{ '--panel-h': 'clamp(430px, 50vw, 560px)' }}>
-            {/* Map */}
-            <div className="relative rounded-2xl overflow-hidden border border-gray-200 shadow-sm flex-shrink-0 w-full min-w-0 lg:w-[70%]" style={{ height: 'var(--panel-h)' }}>
-              <MapContainer ref={mapRef} center={[userCoords.lat, userCoords.lng]} zoom={13} style={{ height: '100%', width: '100%' }}>
-                <TileLayer
-                  url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
-                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-                />
-                <FlyTo coords={userCoords} />
-                <Marker position={[userCoords.lat, userCoords.lng]} icon={userIcon()}>
-                  <Popup><strong>Your location</strong></Popup>
-                </Marker>
-                {hospitals.slice(0, mapLimit).map((h, idx) => (
-                  <Marker key={h.id} position={[h.lat, h.lng]} icon={rankIcon(idx + 1)}>
-                    <Popup>
-                      <strong>{h.name}</strong>
-                      <br />
-                      <span style={{ color: '#6b7280', fontSize: '12px' }}>{h.type}</span>
-                      <br />
-                      <span style={{ color: '#1a8efd', fontSize: '13px', fontWeight: 600 }}>
-                        {h.distance.toFixed(1)} km away
-                      </span>
-                      {h.phone && <><br /><span style={{ fontSize: '12px' }}>{h.phone}</span></>}
-                    </Popup>
+            <div className="flex flex-col lg:flex-row gap-5 items-start w-full min-w-0" style={{ '--panel-h': 'clamp(430px, 50vw, 560px)' }}>
+              {/* Map */}
+              <div className="relative rounded-2xl overflow-hidden border border-gray-200 shadow-sm flex-shrink-0 w-full min-w-0 lg:w-[70%]" style={{ height: 'var(--panel-h)' }}>
+                <Map
+                  ref={mapRef}
+                  initialViewState={{ longitude: userCoords.lng, latitude: userCoords.lat, zoom: 13 }}
+                  style={{ width: '100%', height: '100%' }}
+                  mapStyle={MAP_STYLE}
+                  attributionControl={false}
+                >
+                  <NavigationControl position="top-left" />
+
+                  {/* User location — red drop pin */}
+                  <Marker longitude={userCoords.lng} latitude={userCoords.lat} anchor="bottom">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 36" width="32" height="48" style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))' }}>
+                      <path d="M12 0C5.373 0 0 5.373 0 12c0 9 12 24 12 24s12-15 12-24C24 5.373 18.627 0 12 0z" fill="#e53e3e" stroke="#fff" strokeWidth="1.5" />
+                      <circle cx="12" cy="12" r="5" fill="#fff" />
+                    </svg>
                   </Marker>
-                ))}
-              </MapContainer>
-              {/* Marker cap notice */}
-              {mapLimit < hospitals.length && (
-                <div style={{ position: 'absolute', top: '10px', left: '50%', transform: 'translateX(-50%)', zIndex: 1000 }}
-                  className="bg-white/90 backdrop-blur-sm text-xs text-gray-500 px-3 py-1 rounded-full border border-gray-200 shadow-sm whitespace-nowrap pointer-events-none">
-                  Showing nearest {mapLimit} of {hospitals.length} on map
-                </div>
-              )}
-              {/* Re-center button */}
-              <button
-                onClick={() => {
-                  const map = mapRef.current;
-                  if (!map) return;
-                  map.invalidateSize();
-                  map.flyTo([userCoords.lat, userCoords.lng], 13, { animate: true, duration: 1 });
-                }}
-                title="Re-center to my location"
-                style={{ position: 'absolute', bottom: '24px', right: '12px', zIndex: 1000 }}
-                className="w-10 h-10 bg-white rounded-lg shadow-md border border-gray-200 flex items-center justify-center text-blue-500 hover:bg-blue-50 hover:border-blue-300 transition"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
-                  <path fillRule="evenodd" d="M11.54 22.351l.07.04.028.016a.76.76 0 00.723 0l.028-.015.071-.041a16.975 16.975 0 001.144-.742 19.58 19.58 0 002.683-2.282c1.944-2.083 3.875-5.1 3.875-9.077a8 8 0 10-16 0c0 3.978 1.93 6.994 3.875 9.077a19.58 19.58 0 002.682 2.282 16.975 16.975 0 001.145.742zM12 13.5a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd" />
-                </svg>
-              </button>
-            </div>
 
-            {/* List — same height as map via CSS var, lg:flex-1 only for desktop width */}
-            <div className="flex flex-col gap-3 lg:flex-1 min-w-0 w-full overflow-hidden" style={{ height: 'var(--panel-h)' }}>
-              {/* Controls: results count + radius buttons on same line, wraps if needed */}
-              <div className="flex items-center justify-between gap-x-2 gap-y-1 flex-wrap">
-                <div>
-                  <p className="text-sm font-semibold text-gray-800 flex items-center gap-1.5">
-                    {updating && <span className="w-3 h-3 border-2 border-gray-300 border-t-blue-400 rounded-full animate-spin inline-block" />}
-                    {phase === 'fetching' && !updating ? 'Searching…' : `${hospitals.length} ${hospitals.length === 1 ? 'result' : 'results'} found`}
-                  </p>
-                  <p className="text-xs text-gray-400 mt-0.5">Sorted by distance</p>
-                </div>
-                <div className="flex items-center gap-1 flex-shrink-0">
-                  {RADII.map(r => (
-                    <button
-                      key={r.value}
-                      onClick={() => handleRadiusChange(r.value)}
-                      disabled={updating}
-                      className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition disabled:opacity-50 ${radius === r.value ? 'bg-blue-500 text-white border-blue-500' : 'bg-white text-gray-500 border-gray-200 hover:border-blue-300'}`}
+                  {/* Hospital markers */}
+                  {hospitals.slice(0, mapLimit).map((h, idx) => (
+                    <Marker
+                      key={h.id}
+                      longitude={h.lng}
+                      latitude={h.lat}
+                      anchor="center"
+                      onClick={(e) => { e.originalEvent.stopPropagation(); setPopupHosp(h); }}
                     >
-                      {r.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {phase === 'fetching' && !updating ? (
-                <div className="flex items-center justify-center py-10">
-                  <div className="w-7 h-7 border-2 border-gray-200 border-t-blue-400 rounded-full animate-spin" />
-                </div>
-              ) : hospitals.length === 0 ? (
-                <div className="text-center py-10 text-gray-400 text-sm">
-                  No hospitals or clinics found within {radius / 1000} km. Try a larger radius.
-                </div>
-              ) : (
-                <div className={`space-y-2 overflow-y-auto pr-1 transition-opacity flex-1 min-h-0 ${updating ? 'opacity-50' : 'opacity-100'}`}>
-                  {hospitals.map((h, idx) => (
-                    <div key={h.id} className="flex items-center gap-3 bg-white rounded-xl border border-gray-100 px-4 py-3 hover:border-blue-100 hover:bg-blue-50/30 transition">
-                      <div className="flex-shrink-0 w-7 h-7 rounded-full bg-blue-500 text-white flex items-center justify-center text-xs font-bold">
+                      <div style={{
+                        width: 26, height: 26, background: '#1a8efd', borderRadius: '50%',
+                        border: '2px solid #fff', boxShadow: '0 2px 6px rgba(0,0,0,0.25)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: 11, fontWeight: 700, color: '#fff', cursor: 'pointer',
+                        fontFamily: 'system-ui,sans-serif',
+                      }}>
                         {idx + 1}
                       </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-semibold text-gray-900 truncate">{h.name}</p>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${h.type === 'Hospital' ? 'bg-blue-50 text-blue-600' : 'bg-green-50 text-green-600'}`}>
-                            {h.type}
+                    </Marker>
+                  ))}
+
+                  {/* Popup */}
+                  {popupHosp && (
+                    <Popup
+                      longitude={popupHosp.lng}
+                      latitude={popupHosp.lat}
+                      anchor="bottom"
+                      onClose={() => setPopupHosp(null)}
+                      closeOnClick={false}
+                      offset={10}
+                    >
+                      <div style={{ fontSize: 13, lineHeight: 1.5, minWidth: 140 }}>
+                        <strong style={{ display: 'block', marginBottom: 2 }}>{popupHosp.name}</strong>
+                        <span style={{ color: '#6b7280', fontSize: 12 }}>{popupHosp.type}</span><br />
+                        <span style={{ color: '#1a8efd', fontWeight: 600 }}>{popupHosp.distance.toFixed(1)} km away</span>
+                        {popupHosp.phone && <><br /><span style={{ fontSize: 12, color: '#374151' }}>{popupHosp.phone}</span></>}
+                      </div>
+                    </Popup>
+                  )}
+                </Map>
+
+                {/* Marker cap notice */}
+                {mapLimit < hospitals.length && (
+                  <div style={{ position: 'absolute', top: 10, left: '50%', transform: 'translateX(-50%)', zIndex: 10 }}
+                    className="bg-white/90 backdrop-blur-sm text-xs text-gray-500 px-3 py-1 rounded-full border border-gray-200 shadow-sm whitespace-nowrap pointer-events-none">
+                    Showing nearest {mapLimit} of {hospitals.length} on map
+                  </div>
+                )}
+
+                {/* Re-center button */}
+                <button
+                  onClick={() => mapRef.current?.flyTo({ center: [userCoords.lng, userCoords.lat], zoom: 13, duration: 1000 })}
+                  title="Re-center to my location"
+                  style={{ position: 'absolute', bottom: 24, right: 12, zIndex: 10 }}
+                  className="w-10 h-10 bg-white rounded-lg shadow-md border border-gray-200 flex items-center justify-center text-blue-500 hover:bg-blue-50 hover:border-blue-300 transition"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+                    <path fillRule="evenodd" d="M11.54 22.351l.07.04.028.016a.76.76 0 00.723 0l.028-.015.071-.041a16.975 16.975 0 001.144-.742 19.58 19.58 0 002.683-2.282c1.944-2.083 3.875-5.1 3.875-9.077a8 8 0 10-16 0c0 3.978 1.93 6.994 3.875 9.077a19.58 19.58 0 002.682 2.282 16.975 16.975 0 001.145.742zM12 13.5a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* List */}
+              <div className="flex flex-col gap-3 lg:flex-1 min-w-0 w-full overflow-hidden" style={{ height: 'var(--panel-h)' }}>
+                <div className="flex items-center justify-between gap-x-2 gap-y-1 flex-wrap">
+                  <div>
+                    <p className="text-sm font-semibold text-gray-800 flex items-center gap-1.5">
+                      {updating && <span className="w-3 h-3 border-2 border-gray-300 border-t-blue-400 rounded-full animate-spin inline-block" />}
+                      {phase === 'fetching' && !updating ? 'Searching…' : `${hospitals.length} ${hospitals.length === 1 ? 'result' : 'results'} found`}
+                    </p>
+                    <p className="text-xs text-gray-400 mt-0.5">Sorted by distance</p>
+                  </div>
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    {RADII.map(r => (
+                      <button key={r.value} onClick={() => handleRadiusChange(r.value)} disabled={updating}
+                        className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition disabled:opacity-50 ${radius === r.value ? 'bg-blue-500 text-white border-blue-500' : 'bg-white text-gray-500 border-gray-200 hover:border-blue-300'}`}>
+                        {r.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {phase === 'fetching' && !updating ? (
+                  <div className="flex items-center justify-center py-10">
+                    <div className="w-7 h-7 border-2 border-gray-200 border-t-blue-400 rounded-full animate-spin" />
+                  </div>
+                ) : hospitals.length === 0 ? (
+                  <div className="text-center py-10 text-gray-400 text-sm">
+                    No hospitals or clinics found within {radius / 1000} km. Try a larger radius.
+                  </div>
+                ) : (
+                  <div className={`space-y-2 overflow-y-auto pr-1 transition-opacity flex-1 min-h-0 ${updating ? 'opacity-50' : 'opacity-100'}`}>
+                    {hospitals.map((h, idx) => (
+                      <div key={h.id} className="flex items-center gap-3 bg-white rounded-xl border border-gray-100 px-4 py-3 hover:border-blue-100 hover:bg-blue-50/30 transition">
+                        <div className="flex-shrink-0 w-7 h-7 rounded-full bg-blue-500 text-white flex items-center justify-center text-xs font-bold">
+                          {idx + 1}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-semibold text-gray-900 truncate">{h.name}</p>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${h.type === 'Hospital' ? 'bg-blue-50 text-blue-600' : 'bg-green-50 text-green-600'}`}>
+                              {h.type}
+                            </span>
+                            {h.phone && <span className="text-xs text-gray-400 truncate">{h.phone}</span>}
+                          </div>
+                        </div>
+                        <div className="flex-shrink-0 text-right">
+                          <span className="text-sm font-semibold text-blue-500">
+                            {h.distance.toFixed(1)}<span className="text-xs font-normal text-gray-400 ml-0.5">km</span>
                           </span>
-                          {h.phone && <span className="text-xs text-gray-400 truncate">{h.phone}</span>}
                         </div>
                       </div>
-                      <div className="flex-shrink-0 text-right">
-                        <span className="text-sm font-semibold text-blue-500">
-                          {h.distance.toFixed(1)}<span className="text-xs font-normal text-gray-400 ml-0.5">km</span>
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
           );
         })()}
       </div>

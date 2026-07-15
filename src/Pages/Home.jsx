@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Hero from './../Components/Hero';
+import NearbyMap from './../Components/NearbyMap';
 import About from './About';
 import Testimonial from './Testimonial';
 import Contact from './Contact';
@@ -8,11 +9,13 @@ import DoctorImg from '../assets/Doctor.png';
 import DoctorsImg from '../assets/Doctors.png';
 
 function Home() {
-  const [loaded, setLoaded] = useState(false);
+  const [imagesLoaded, setImagesLoaded] = useState(false);
+  const [heroRestored, setHeroRestored] = useState(false);
+  const loaded = imagesLoaded && heroRestored;
 
   useEffect(() => {
     let remaining = 2;
-    const done = () => { remaining--; if (remaining <= 0) setLoaded(true); };
+    const done = () => { remaining--; if (remaining <= 0) setImagesLoaded(true); };
 
     [DoctorImg, DoctorsImg].forEach((src) => {
       const img = new Image();
@@ -51,7 +54,8 @@ function Home() {
         </div>
       )}
       <div style={{ opacity: loaded ? 1 : 0, transition: 'opacity 0.4s ease' }}>
-        <Hero />
+        <Hero onRestoreComplete={() => setHeroRestored(true)} />
+        <NearbyMap />
         <About />
         <Testimonial />
         <Contact />

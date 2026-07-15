@@ -9,7 +9,9 @@ import "react-toastify/dist/ReactToastify.css";
 import SearchSuggestions from "./SearchSuggestions";
 import Hospitals from "./Hospitals";
 
-function Hero() {
+const LAST_SEARCH_KEY = "docscout_last_district_search";
+
+function Hero({ onRestoreComplete }) {
   const districts = [
     "Angul","Balangir","Balasore","Bargarh","Bhadrak","Boudh","Cuttack",
     "Deogarh","Dhenkanal","Gajapati","Ganjam","Jagatsinghpur","Jajpur",
@@ -31,6 +33,7 @@ function Hero() {
   const [filteredDiseases, setFilteredDiseases] = useState([]);
   const [hospitalList, setHospitalList] = useState([]);
   const [hasSearched, setHasSearched] = useState(false);
+  const [committedDistrict, setCommittedDistrict] = useState("");
   const [loadingNearby, setLoadingNearby] = useState(false);
   const [userCoords, setUserCoords] = useState(null);
   const [sortingByDistance, setSortingByDistance] = useState(false);
@@ -98,6 +101,8 @@ function Hero() {
       const hospitalsData = snapshot.empty ? [] : snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
       setHospitalList(hospitalsData);
       setHasSearched(true);
+      setCommittedDistrict(searchInput);
+      sessionStorage.setItem(LAST_SEARCH_KEY, searchInput);
       scrollToHospitals();
     } catch (error) {
       console.error("Error fetching hospitals:", error);
@@ -110,6 +115,29 @@ function Hero() {
       window.scrollTo({ top: yPos, behavior: "smooth" });
     }
   };
+
+  useEffect(() => {
+    const saved = sessionStorage.getItem(LAST_SEARCH_KEY);
+    if (!saved || !districts.includes(saved) || !db) {
+      onRestoreComplete?.();
+      return;
+    }
+    setSearchInput(saved);
+    (async () => {
+      try {
+        const hospitalsCollection = collection(db, "Odisha", saved, "Hospitals");
+        const snapshot = await getDocs(hospitalsCollection);
+        const hospitalsData = snapshot.empty ? [] : snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+        setHospitalList(hospitalsData);
+        setHasSearched(true);
+        setCommittedDistrict(saved);
+      } catch (error) {
+        console.error("Error restoring hospitals:", error);
+      } finally {
+        onRestoreComplete?.();
+      }
+    })();
+  }, []);
 
   const handleNearbyHospitals = () => {
     if (!navigator.geolocation) {
@@ -160,8 +188,10 @@ function Hero() {
 
           setHospitalList(hospitalsData);
           setHasSearched(true);
+          setCommittedDistrict(detectedDistrict);
           setUserCoords({ lat: latitude, lng: longitude });
           setLoadingNearby(false);
+          sessionStorage.setItem(LAST_SEARCH_KEY, detectedDistrict);
 
           if (hospitalsData.length === 0) {
             showResult("info", `No hospitals found for ${detectedDistrict} in database.`);
@@ -328,7 +358,7 @@ function Hero() {
       </div>
 
       <div ref={hospitalListRef} className={`${hospitalList.length > 0 ? "px-4 py-6" : ""}`}>
-        <Hospitals hospitals={hospitalList} hasSearched={hasSearched} searchedDistrict={searchInput} userCoords={userCoords} sortingByDistance={sortingByDistance} />
+        <Hospitals hospitals={hospitalList} hasSearched={hasSearched} searchedDistrict={committedDistrict} userCoords={userCoords} sortingByDistance={sortingByDistance} />
       </div>
 
       <ToastContainer

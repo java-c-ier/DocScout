@@ -8,6 +8,12 @@
   included_files = ["netlify/functions/templates/**"]
 
 [[redirects]]
+  from = "https://doc-scout.netlify.app/*"
+  to = "https://doc-scout.jimut.in/:splat"
+  status = 301
+  force = true
+
+[[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200

@@ -89,7 +89,14 @@ Angul, Balangir, Balasore, Bargarh, Bhadrak, Boudh, Cuttack, Deogarh, Dhenkanal,
 - If no hospital data is provided for a district query, direct users to search on DocScout.
 - If asked about a feature, explain it clearly with steps if needed.
 - Answer general medical questions (symptoms, diseases, specialists) helpfully but remind users to consult a doctor for diagnosis.
-- If asked something unrelated to healthcare or DocScout, politely redirect.`;
+- If asked something unrelated to healthcare or DocScout, politely redirect.
+
+## Formatting rules (IMPORTANT)
+- You may use **bold** for hospital names and important terms.
+- Do NOT use # headers, --- dividers, or [text](url) markdown links.
+- For hospital lists use plain bullet format: "- **Hospital Name**: https://website.com" (or just "- **Hospital Name**" if no website).
+- For links, write the full URL plainly after a colon.
+- Keep responses clean and readable.`;
 
 function detectDistrict(text) {
   const lower = text.toLowerCase();

@@ -31,6 +31,43 @@ function TypingIndicator() {
   );
 }
 
+const URL_RE = /(https?:\/\/[^\s,)]+)/g;
+const BOLD_RE = /\*\*(.+?)\*\*/g;
+
+function renderSegment(text, key) {
+  const parts = text.split(URL_RE);
+  return parts.map((part, j) =>
+    URL_RE.test(part) ? (
+      <a key={`${key}-${j}`} href={part} target="_blank" rel="noopener noreferrer"
+        className="text-blue-500 underline break-all">{part}</a>
+    ) : part
+  );
+}
+
+function renderLine(line, i) {
+  const segments = [];
+  let last = 0;
+  let match;
+  BOLD_RE.lastIndex = 0;
+  while ((match = BOLD_RE.exec(line)) !== null) {
+    if (match.index > last) segments.push(...renderSegment(line.slice(last, match.index), `${i}-pre-${last}`));
+    segments.push(<strong key={`${i}-b-${match.index}`}>{match[1]}</strong>);
+    last = match.index + match[0].length;
+  }
+  if (last < line.length) segments.push(...renderSegment(line.slice(last), `${i}-post`));
+  return segments;
+}
+
+function renderText(text) {
+  const lines = text.split('\n');
+  return lines.map((line, i) => (
+    <span key={i}>
+      {renderLine(line, i)}
+      {i < lines.length - 1 && <br />}
+    </span>
+  ));
+}
+
 function Message({ msg, animate }) {
   const isUser = msg.role === 'user';
   return (
@@ -41,13 +78,13 @@ function Message({ msg, animate }) {
         </div>
       )}
       <div
-        className={`max-w-[75%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed shadow-sm whitespace-pre-wrap ${
+        className={`max-w-[75%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed shadow-sm ${
           isUser
             ? 'bg-blue-500 text-white rounded-br-sm'
             : 'bg-white border border-gray-100 text-gray-800 rounded-bl-sm'
         } ${!isUser && animate ? 'scouty-msg-in' : ''}`}
       >
-        {msg.content}
+        {isUser ? msg.content : renderText(msg.content)}
       </div>
     </div>
   );
@@ -63,11 +100,19 @@ function IdleScreen() {
   );
 }
 
+const DISTRICTS = [
+  'Angul','Balangir','Balasore','Bargarh','Bhadrak','Boudh','Cuttack','Deogarh',
+  'Dhenkanal','Gajapati','Ganjam','Jagatsinghpur','Jajpur','Jharsuguda','Kalahandi',
+  'Kandhamal','Kendrapada','Keonjhar','Khordha','Koraput','Malkangiri','Mayurbhanj',
+  'Nabarangpur','Nayagarh','Nuapada','Puri','Rayagada','Sambalpur','Subarnapur','Sundargarh',
+];
+
 export default function Chatbot() {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [locating, setLocating] = useState(false);
   const [lastAnimatedIdx, setLastAnimatedIdx] = useState(-1);
   const bottomRef = useRef(null);
   const inputRef = useRef(null);
@@ -125,6 +170,54 @@ export default function Chatbot() {
     }
   };
 
+  const handleLocation = async () => {
+    if (!navigator.geolocation) return;
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        try {
+          const { latitude, longitude } = pos.coords;
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`,
+            { headers: { 'Accept-Language': 'en-US,en' } }
+          );
+          const data = await res.json();
+          const addr = data.address || {};
+          const district = DISTRICTS.find((d) => {
+            const dl = d.toLowerCase();
+            return (
+              addr.state_district?.toLowerCase().includes(dl) ||
+              addr.county?.toLowerCase().includes(dl) ||
+              addr.district?.toLowerCase().includes(dl) ||
+              addr.city?.toLowerCase().includes(dl) ||
+              addr.town?.toLowerCase().includes(dl)
+            );
+          });
+          if (district) {
+            setInput(`What hospitals are in ${district}?`);
+          } else {
+            const outsideMsg = { role: 'assistant', content: "You are outside Odisha. Currently DocScout doesn't have data for hospitals outside Odisha. You can still search for any Odisha district manually." };
+            setMessages((prev) => {
+              const next = [...prev, outsideMsg];
+              setLastAnimatedIdx(next.length - 1);
+              return next;
+            });
+          }
+        } catch {
+          setInput('Unable to detect location. Please try again.');
+        } finally {
+          setLocating(false);
+          inputRef.current?.focus();
+        }
+      },
+      () => {
+        setLocating(false);
+        setInput('Location access denied. Please allow location to use this feature.');
+        inputRef.current?.focus();
+      }
+    );
+  };
+
   const handleKey = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
   };
@@ -170,6 +263,20 @@ export default function Chatbot() {
 
         {/* Input */}
         <div className="flex items-end gap-2 px-3 py-3 border-t border-gray-100 bg-white flex-shrink-0">
+          <button
+            onClick={handleLocation}
+            disabled={locating || loading}
+            title="Use my location"
+            className="w-9 h-9 rounded-xl border border-gray-200 hover:bg-gray-50 disabled:opacity-40 flex items-center justify-center text-gray-500 transition flex-shrink-0"
+          >
+            {locating ? (
+              <span className="w-3.5 h-3.5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+              </svg>
+            )}
+          </button>
           <textarea
             ref={inputRef}
             value={input}

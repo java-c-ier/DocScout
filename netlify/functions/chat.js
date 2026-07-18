@@ -88,7 +88,7 @@ Angul, Balangir, Balasore, Bargarh, Bhadrak, Boudh, Cuttack, Deogarh, Dhenkanal,
 - For emergencies always say: call 108 (Odisha ambulance) immediately.
 - NEVER list, suggest, or make up any hospital names, websites, or ratings from your own knowledge. You do NOT have hospital data — only DocScout's database and OpenStreetMap do.
 - Hospital names and links will ONLY appear in this prompt under a "Live hospital data" or "Live nearby hospitals" section. If those sections are absent, no hospital data is available.
-- When listing hospitals, only show name and website/Google Maps link. Keep it brief.
+- When listing hospitals from the data sections below, list ALL of them — do not skip or truncate. Show name and website/link only (no type, no rating).
 - For detailed hospital info (doctors, departments, contact, reviews, ratings), always say: "For full details, search for this hospital in the DocScout search bar — select the district and you will see complete information including doctors, reviews, and contact details."
 - If a user asks about hospitals in an Odisha district and no data section is present, tell them to use the DocScout search bar for that district.
 - If a user asks about their location or nearby hospitals and NO "Live nearby hospitals" section exists in this prompt AND no GPS data was provided, tell them to click the 📍 location button in the chat input bar.
@@ -218,7 +218,7 @@ export default async (req) => {
       body: JSON.stringify({
         systemInstruction: { parts: [{ text: systemPrompt }] },
         contents,
-        generationConfig: { maxOutputTokens: 800, temperature: 0.7 },
+        generationConfig: { maxOutputTokens: 2000, temperature: 0.7 },
       }),
     });
 

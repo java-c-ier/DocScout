@@ -196,7 +196,7 @@ export default function Chatbot() {
           if (district) {
             setInput(`What hospitals are in ${district}?`);
           } else {
-            const outsideMsg = { role: 'assistant', content: "You are outside Odisha. Currently DocScout doesn't have data for hospitals outside Odisha. You can still search for any Odisha district manually." };
+            const outsideMsg = { role: 'assistant', content: "You are outside Odisha. DocScout currently only covers hospitals within Odisha.\n\nIf you visit Odisha, scroll down to the Live Map section on the homepage — it shows real-time hospitals and clinics near your location within 5 km, 10 km, or 20 km.\n\nFor hospitals outside Odisha, please use Google Maps or a local hospital directory." };
             setMessages((prev) => {
               const next = [...prev, outsideMsg];
               setLastAnimatedIdx(next.length - 1);

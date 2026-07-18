@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { AuthProvider, useAuth } from './AuthContext'
 import Routing from './utils/Routing'
+import Chatbot from './Components/Chatbot'
 
 function AppContent() {
   const { authReady } = useAuth()
@@ -34,6 +35,7 @@ function AppContent() {
         </div>
       )}
       <Routing />
+      <Chatbot />
     </>
   )
 }

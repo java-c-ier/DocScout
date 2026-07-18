@@ -1,5 +1,5 @@
 const GEMINI_API_URL =
-  'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
+  'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
 
 const SYSTEM_PROMPT = `You are Scouty, a helpful AI assistant for DocScout — a healthcare finder platform for Odisha, India. You are embedded inside the DocScout web app.
 
@@ -101,7 +101,8 @@ export default async (req) => {
       const err = await res.json().catch(() => ({}));
       const msg = res.status === 429
         ? 'Too many requests. Please wait a moment and try again.'
-        : err.error?.message || 'Gemini API error';
+        : err.error?.message || `Gemini API error (${res.status})`;
+      console.error('Gemini error:', res.status, JSON.stringify(err));
       return Response.json({ reply: msg });
     }
 

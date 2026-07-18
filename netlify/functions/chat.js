@@ -1,5 +1,5 @@
 const GEMINI_API_URL =
-  'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+  'https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent';
 
 const SYSTEM_PROMPT = `You are Scouty, a helpful AI assistant for DocScout — a healthcare finder platform for Odisha, India. You are embedded inside the DocScout web app.
 

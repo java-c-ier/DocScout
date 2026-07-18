@@ -3,6 +3,19 @@ import favicon from '../assets/medical-symbol.png';
 
 const WELCOME_TEXT = "Hi! I'm Scouty, your DocScout assistant. Ask me anything about hospitals in Odisha, symptoms, specialists, or how to use DocScout. 🏥";
 
+const DISTRICTS = [
+  'Angul','Balangir','Balasore','Bargarh','Bhadrak','Boudh','Cuttack','Deogarh',
+  'Dhenkanal','Gajapati','Ganjam','Jagatsinghpur','Jajpur','Jharsuguda','Kalahandi',
+  'Kandhamal','Kendrapada','Keonjhar','Khordha','Koraput','Malkangiri','Mayurbhanj',
+  'Nabarangpur','Nayagarh','Nuapada','Puri','Rayagada','Sambalpur','Subarnapur','Sundargarh',
+];
+
+const SUGGESTIONS = [
+  'Hospitals in Cuttack',
+  'Show hospitals near me',
+  'How to search hospitals?',
+  'Emergency contact',
+];
 
 const msgAnimation = `
   @keyframes scouty-msg-in {
@@ -26,6 +39,20 @@ function TypingIndicator() {
             <span key={i} className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: `${i * 0.15}s` }} />
           ))}
         </div>
+      </div>
+    </div>
+  );
+}
+
+function LocatingIndicator() {
+  return (
+    <div className="flex items-end gap-2">
+      <div className="w-9 h-9 rounded-full bg-white border border-gray-100 flex items-center justify-center flex-shrink-0 p-0.5">
+        <img src={favicon} alt="Scouty" className="w-full h-full object-contain" />
+      </div>
+      <div className="bg-white border border-gray-100 rounded-2xl rounded-bl-sm px-4 py-2.5 shadow-sm text-sm text-gray-500 flex items-center gap-2">
+        <span className="w-3 h-3 border-2 border-blue-400 border-t-transparent rounded-full animate-spin flex-shrink-0" />
+        Detecting your location…
       </div>
     </div>
   );
@@ -90,22 +117,26 @@ function Message({ msg, animate }) {
   );
 }
 
-function IdleScreen() {
+function IdleScreen({ onSuggestion }) {
   return (
     <div className="flex flex-col items-center justify-center flex-1 gap-3 select-none">
       <img src={favicon} alt="Scouty" className="w-16 h-16 object-contain" />
       <p className="text-gray-800 font-semibold text-lg">Scouty</p>
       <p className="text-gray-400 text-sm text-center px-6">Your DocScout assistant — ask me anything!</p>
+      <div className="flex flex-wrap justify-center gap-2 px-4 mt-1">
+        {SUGGESTIONS.map((s) => (
+          <button
+            key={s}
+            onClick={() => onSuggestion(s)}
+            className="text-xs bg-blue-50 text-blue-600 border border-blue-100 rounded-full px-3 py-1 hover:bg-blue-100 transition"
+          >
+            {s}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
-
-const DISTRICTS = [
-  'Angul','Balangir','Balasore','Bargarh','Bhadrak','Boudh','Cuttack','Deogarh',
-  'Dhenkanal','Gajapati','Ganjam','Jagatsinghpur','Jajpur','Jharsuguda','Kalahandi',
-  'Kandhamal','Kendrapada','Keonjhar','Khordha','Koraput','Malkangiri','Mayurbhanj',
-  'Nabarangpur','Nayagarh','Nuapada','Puri','Rayagada','Sambalpur','Subarnapur','Sundargarh',
-];
 
 export default function Chatbot() {
   const [open, setOpen] = useState(false);
@@ -113,81 +144,66 @@ export default function Chatbot() {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [locating, setLocating] = useState(false);
-  const [pendingCoords, setPendingCoords] = useState(null);
   const [lastAnimatedIdx, setLastAnimatedIdx] = useState(-1);
   const bottomRef = useRef(null);
   const inputRef = useRef(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, loading]);
+  }, [messages, loading, locating]);
 
   useEffect(() => {
     if (open) setTimeout(() => inputRef.current?.focus(), 150);
   }, [open]);
 
+  const addAssistantMsg = (content) => {
+    setMessages((prev) => {
+      const next = [...prev, { role: 'assistant', content }];
+      setLastAnimatedIdx(next.length - 1);
+      return next;
+    });
+  };
+
   const isGreeting = (text) =>
     /^\s*(hi+|hello+|hey+|hiya|howdy|greetings|good\s*(morning|afternoon|evening|day)|sup|what'?s\s*up)\s*[!?.]*\s*$/i.test(text);
 
+  const isFarewell = (text) =>
+    /^\s*(bye|goodbye|see\s*you|thanks|thank\s*you|ok\s*thanks|ok\s*bye|that'?s?\s*(all|it)|done)\s*[!?.]*\s*$/i.test(text);
+
   const isLocationQuery = (text) =>
-    /where\s*(am\s*i|is\s*my\s*location)|my\s*location|near\s*(me|my)|nearby\s*hospital|hospitals?\s*near|show\s*nearby|current\s*location/i.test(text);
+    /where\s*(am\s*i|is\s*my\s*location)|my\s*(current\s*)?location|(show\s*)?(hospitals?|clinics?)\s*near\s*(me|my)|nearby\s*(hospitals?|clinics?)|show\s*nearby|current\s*location/i.test(text);
+
+  const callApi = async (history, coords) => {
+    const res = await fetch('/.netlify/functions/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: history, coords: coords || null }),
+    });
+    const data = await res.json();
+    return data.reply || data.error || 'Sorry, something went wrong.';
+  };
 
   const sendMessage = async (text, coords = null) => {
     if (!text || loading) return;
-
     const userMsg = { role: 'user', content: text };
     const history = [...messages, userMsg];
     setMessages(history);
-
     setLoading(true);
     try {
-      const res = await fetch('/.netlify/functions/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: history, coords }),
-      });
-      const data = await res.json();
-      setMessages((prev) => {
-        const next = [...prev, { role: 'assistant', content: data.reply || data.error || 'Sorry, something went wrong.' }];
-        setLastAnimatedIdx(next.length - 1);
-        return next;
-      });
+      const reply = await callApi(history, coords);
+      addAssistantMsg(reply);
     } catch {
-      setMessages((prev) => {
-        const next = [...prev, { role: 'assistant', content: 'Network error. Please try again.' }];
-        setLastAnimatedIdx(next.length - 1);
-        return next;
-      });
+      addAssistantMsg('Network error. Please check your connection and try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  const send = async () => {
-    const text = input.trim();
-    if (!text || loading) return;
-    setInput('');
-    setPendingCoords(null);
-
-    if (isGreeting(text)) {
-      setMessages((prev) => {
-        const next = [...prev, { role: 'user', content: text }, { role: 'assistant', content: WELCOME_TEXT }];
-        setLastAnimatedIdx(next.length - 1);
-        return next;
-      });
+  const fetchLocation = async (originalText = null) => {
+    if (!navigator.geolocation) {
+      addAssistantMsg("Your browser doesn't support location access. Please use the search bar to find hospitals by district.");
       return;
     }
-
-    if (isLocationQuery(text) && !pendingCoords) {
-      handleLocation();
-      return;
-    }
-
-    await sendMessage(text, pendingCoords);
-  };
-
-  const handleLocation = async () => {
-    if (!navigator.geolocation) return;
     setLocating(true);
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
@@ -209,33 +225,81 @@ export default function Chatbot() {
               addr.town?.toLowerCase().includes(dl)
             );
           });
-          const coords = { lat: latitude, lon: longitude };
-          const text = district ? `What hospitals are in ${district}?` : 'Show hospitals near my location';
+          const locationName = [
+            addr.neighbourhood || addr.suburb || addr.village || addr.town,
+            addr.city || addr.county,
+            addr.state,
+            addr.country,
+          ].filter(Boolean).join(', ');
+
+          const coords = { lat: latitude, lon: longitude, locationName };
+          const text = originalText || (district ? `What hospitals are in ${district}?` : 'Show hospitals near my location');
           setLocating(false);
           await sendMessage(text, coords);
         } catch {
           setLocating(false);
-          setMessages((prev) => {
-            const next = [...prev, { role: 'assistant', content: 'Unable to detect location. Please try again.' }];
-            setLastAnimatedIdx(next.length - 1);
-            return next;
-          });
+          addAssistantMsg('Could not detect your location. Please try again or search manually.');
         }
       },
-      () => {
+      (err) => {
         setLocating(false);
-        setMessages((prev) => {
-          const next = [...prev, { role: 'assistant', content: 'Location access denied. Please allow location permission and try again.' }];
-          setLastAnimatedIdx(next.length - 1);
-          return next;
-        });
-      }
+        if (err.code === 1) {
+          addAssistantMsg('Location permission denied. Please allow location access in your browser settings and try again.');
+        } else {
+          addAssistantMsg('Unable to get your location. Please try again or search by district manually.');
+        }
+      },
+      { timeout: 10000, maximumAge: 60000 }
     );
+  };
+
+  const send = async () => {
+    const text = input.trim();
+    if (!text || loading || locating) return;
+    setInput('');
+
+    if (isGreeting(text)) {
+      setMessages((prev) => {
+        const next = [...prev, { role: 'user', content: text }, { role: 'assistant', content: WELCOME_TEXT }];
+        setLastAnimatedIdx(next.length - 1);
+        return next;
+      });
+      return;
+    }
+
+    if (isFarewell(text)) {
+      setMessages((prev) => {
+        const next = [...prev, { role: 'user', content: text }, { role: 'assistant', content: "You're welcome! Stay healthy. Feel free to ask anything anytime. 😊" }];
+        setLastAnimatedIdx(next.length - 1);
+        return next;
+      });
+      return;
+    }
+
+    if (isLocationQuery(text)) {
+      setMessages((prev) => [...prev, { role: 'user', content: text }]);
+      await fetchLocation(text);
+      return;
+    }
+
+    await sendMessage(text);
+  };
+
+  const handleSuggestion = async (text) => {
+    if (loading || locating) return;
+    if (isLocationQuery(text)) {
+      setMessages((prev) => [...prev, { role: 'user', content: text }]);
+      await fetchLocation(text);
+      return;
+    }
+    await sendMessage(text);
   };
 
   const handleKey = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
   };
+
+  const showTyping = loading || locating;
 
   return (
     <>
@@ -255,6 +319,7 @@ export default function Chatbot() {
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-white font-semibold text-sm leading-tight">Scouty</p>
+            <p className="text-white/60 text-xs">{showTyping ? (locating ? 'Detecting location…' : 'Typing…') : 'DocScout Assistant'}</p>
           </div>
           <button onClick={() => setOpen(false)} className="text-white/70 hover:text-white transition p-1">
             <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -265,11 +330,12 @@ export default function Chatbot() {
 
         {/* Messages / Idle */}
         <div className="flex-1 overflow-y-auto px-4 py-4 bg-gray-50 flex flex-col">
-          {messages.length === 0 ? (
-            <IdleScreen />
+          {messages.length === 0 && !showTyping ? (
+            <IdleScreen onSuggestion={handleSuggestion} />
           ) : (
             <div className="space-y-4">
               {messages.map((m, i) => <Message key={i} msg={m} animate={i === lastAnimatedIdx} />)}
+              {locating && <LocatingIndicator />}
               {loading && <TypingIndicator />}
               <div ref={bottomRef} />
             </div>
@@ -279,13 +345,13 @@ export default function Chatbot() {
         {/* Input */}
         <div className="flex items-end gap-2 px-3 py-3 border-t border-gray-100 bg-white flex-shrink-0">
           <button
-            onClick={handleLocation}
+            onClick={() => fetchLocation()}
             disabled={locating || loading}
             title="Use my location"
             className="w-9 h-9 rounded-xl border border-gray-200 hover:bg-gray-50 disabled:opacity-40 flex items-center justify-center text-gray-500 transition flex-shrink-0"
           >
             {locating ? (
-              <span className="w-3.5 h-3.5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+              <span className="w-3.5 h-3.5 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
             ) : (
               <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
@@ -301,10 +367,11 @@ export default function Chatbot() {
             placeholder="Ask about hospitals, symptoms…"
             className="flex-1 resize-none rounded-xl border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:border-blue-400 max-h-24 leading-snug"
             style={{ overflowY: input.split('\n').length > 3 ? 'auto' : 'hidden' }}
+            disabled={loading || locating}
           />
           <button
             onClick={send}
-            disabled={!input.trim() || loading}
+            disabled={!input.trim() || loading || locating}
             className="w-9 h-9 rounded-xl bg-blue-500 hover:bg-blue-600 disabled:opacity-40 flex items-center justify-center text-white transition flex-shrink-0"
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">

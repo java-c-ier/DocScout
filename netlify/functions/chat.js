@@ -91,7 +91,8 @@ Angul, Balangir, Balasore, Bargarh, Bhadrak, Boudh, Cuttack, Deogarh, Dhenkanal,
 - When listing hospitals, only show name and website/Google Maps link. Keep it brief.
 - For detailed hospital info (doctors, departments, contact, reviews, ratings), always say: "For full details, search for this hospital in the DocScout search bar — select the district and you will see complete information including doctors, reviews, and contact details."
 - If a user asks about hospitals in an Odisha district and no data section is present, tell them to use the DocScout search bar for that district.
-- If a user asks about their location or nearby hospitals and no location data is provided in this prompt, tell them to click the 📍 location button in the chat input bar — it will automatically detect their GPS and find nearby hospitals.
+- If a user asks about their location or nearby hospitals and NO "Live nearby hospitals" section exists in this prompt AND no GPS data was provided, tell them to click the 📍 location button in the chat input bar.
+- If a "Live nearby hospitals" section says no hospitals were found, say so honestly and suggest expanding the search radius using the Live Map on the homepage.
 - If a user is outside Odisha or asks about hospitals outside Odisha, explain that DocScout's database covers only Odisha, but the Live Map on the homepage works worldwide using OpenStreetMap — scroll down and click Show hospitals near me.
 - If asked about a feature, explain it clearly with steps if needed.
 - Answer general medical questions (symptoms, diseases, specialists) helpfully but remind users to consult a doctor for diagnosis.
@@ -117,8 +118,17 @@ async function fetchHospitals(district) {
     .map((h) => ({ name: h.Name, website: h.Website || '', type: h.Type || '' }));
 }
 
-async function fetchNearbyOverpass(lat, lon, radiusMeters = 5000) {
-  const query = `[out:json][timeout:10];(node["amenity"="hospital"](around:${radiusMeters},${lat},${lon});node["amenity"="clinic"](around:${radiusMeters},${lat},${lon}););out body;`;
+function haversineKm(lat1, lon1, lat2, lon2) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+async function fetchNearbyOverpass(lat, lon, radiusMeters = 10000) {
+  const query = `[out:json][timeout:25];(node["amenity"~"hospital|clinic"](around:${radiusMeters},${lat},${lon});way["amenity"~"hospital|clinic"](around:${radiusMeters},${lat},${lon}););out center;`;
   const res = await fetch('https://overpass-api.de/api/interpreter', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -127,11 +137,20 @@ async function fetchNearbyOverpass(lat, lon, radiusMeters = 5000) {
   const data = await res.json();
   return (data.elements || [])
     .filter((e) => e.tags?.name)
-    .slice(0, 15)
-    .map((e) => ({
-      name: e.tags.name,
-      mapsLink: `https://www.google.com/maps?q=${e.lat},${e.lon}`,
-    }));
+    .map((e) => {
+      const elat = e.lat ?? e.center?.lat;
+      const elon = e.lon ?? e.center?.lon;
+      if (!elat || !elon) return null;
+      const distKm = haversineKm(lat, lon, elat, elon);
+      return {
+        name: e.tags.name,
+        distKm: Math.round(distKm * 10) / 10,
+        mapsLink: `https://www.google.com/maps?q=${elat},${elon}`,
+      };
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.distKm - b.distKm)
+    .slice(0, 5);
 }
 
 export default async (req) => {
@@ -160,18 +179,38 @@ export default async (req) => {
       : Promise.resolve(null),
   ]);
 
-  if (overpassResults?.length > 0) {
-    const list = overpassResults.map((h) => `- ${h.name}: ${h.mapsLink}`).join('\n');
-    systemPrompt += `\n\n## Live nearby hospitals (OpenStreetMap, within 5 km of user's GPS location)\nList these with their Google Maps links:\n${list}`;
-  } else if (coords?.lat && coords?.lon) {
-    systemPrompt += `\n\n## Live nearby hospitals\nNo hospitals found within 5 km of the user's location via OpenStreetMap.`;
+  if (coords?.locationName) {
+    systemPrompt += `\n\n## User's current location\nThe user is currently at: ${coords.locationName}. Mention this when relevant.`;
   }
 
-  if (firestoreResults?.length > 0) {
+  if (overpassResults?.length > 0) {
+    const overpassNames = new Set(overpassResults.map((h) => h.name.toLowerCase()));
+    const list = overpassResults.map((h) => `- ${h.name} (${h.distKm} km away): ${h.mapsLink}`).join('\n');
+    systemPrompt += `\n\n## Top 5 nearby hospitals (OpenStreetMap, sorted by distance)\nList these with distance and Google Maps links. After listing, tell the user they can see more on the Live Map section of the homepage (5 km, 10 km, or 20 km radius options):\n${list}`;
+
+    if (firestoreResults?.length > 0) {
+      const deduped = firestoreResults.filter((h) => !overpassNames.has(h.name.toLowerCase()));
+      if (deduped.length > 0) {
+        const dbList = deduped
+          .map((h) => `- ${h.name}${h.type ? ` (${h.type})` : ''}${h.website ? `: ${h.website}` : ''}`)
+          .join('\n');
+        systemPrompt += `\n\n## Additional DocScout database hospitals for ${district} district (not in nearby list above)\nMention these as well:\n${dbList}`;
+      }
+    }
+  } else if (coords?.lat && coords?.lon) {
+    systemPrompt += `\n\n## Live nearby hospitals\nNo hospitals found within 10 km via OpenStreetMap. Tell the user to try the Live Map section on the homepage which supports up to 20 km radius.`;
+
+    if (firestoreResults?.length > 0) {
+      const list = firestoreResults
+        .map((h) => `- ${h.name}${h.type ? ` (${h.type})` : ''}${h.website ? `: ${h.website}` : ''}`)
+        .join('\n');
+      systemPrompt += `\n\n## DocScout database hospitals for ${district} district\nList these with website links if available:\n${list}`;
+    }
+  } else if (firestoreResults?.length > 0) {
     const list = firestoreResults
       .map((h) => `- ${h.name}${h.type ? ` (${h.type})` : ''}${h.website ? `: ${h.website}` : ''}`)
       .join('\n');
-    systemPrompt += `\n\n## DocScout database hospitals for ${district} district\nAlso list these with website links if available:\n${list}`;
+    systemPrompt += `\n\n## DocScout database hospitals for ${district} district\nList these with website links if available:\n${list}`;
   }
 
   const contents = messages.map((m) => ({

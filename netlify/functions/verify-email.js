@@ -1,4 +1,4 @@
-const admin = require("firebase-admin");
+import admin from 'firebase-admin';
 
 if (!admin.apps.length) {
   const serviceAccount = JSON.parse(
@@ -9,25 +9,25 @@ if (!admin.apps.length) {
 
 const db = admin.firestore();
 
-exports.handler = async (event) => {
-  if (event.httpMethod !== "POST") return { statusCode: 405, body: "Method Not Allowed" };
+export default async (req) => {
+  if (req.method !== "POST") return new Response("Method Not Allowed", { status: 405 });
 
   let body;
-  try { body = JSON.parse(event.body); } catch { return { statusCode: 400, body: "Invalid JSON" }; }
+  try { body = await req.json(); } catch { return new Response("Invalid JSON", { status: 400 }); }
 
   const { token } = body;
-  if (!token) return { statusCode: 400, body: JSON.stringify({ error: "missing_token" }) };
+  if (!token) return Response.json({ error: "missing_token" }, { status: 400 });
 
   const tokenDoc = await db.collection("emailVerifications").doc(token).get();
-  if (!tokenDoc.exists) return { statusCode: 400, body: JSON.stringify({ error: "invalid_token" }) };
+  if (!tokenDoc.exists) return Response.json({ error: "invalid_token" }, { status: 400 });
 
   const { uid, email, expiresAt, used } = tokenDoc.data();
 
-  if (used) return { statusCode: 400, body: JSON.stringify({ error: "already_used" }) };
-  if (Date.now() > expiresAt) return { statusCode: 400, body: JSON.stringify({ error: "expired" }) };
+  if (used) return Response.json({ error: "already_used" }, { status: 400 });
+  if (Date.now() > expiresAt) return Response.json({ error: "expired" }, { status: 400 });
 
   await tokenDoc.ref.update({ used: true });
   await db.collection("users").doc(uid).update({ emailVerified: true });
 
-  return { statusCode: 200, body: JSON.stringify({ success: true, email }) };
+  return Response.json({ success: true, email });
 };

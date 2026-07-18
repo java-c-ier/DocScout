@@ -1,7 +1,10 @@
-const crypto = require("crypto");
-const fs = require("fs");
-const path = require("path");
-const admin = require("firebase-admin");
+import crypto from 'crypto';
+import { readFileSync } from 'fs';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
+import admin from 'firebase-admin';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 if (!admin.apps.length) {
   const serviceAccount = JSON.parse(
@@ -14,8 +17,8 @@ const db = admin.firestore();
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 const FROM_NOREPLY = "DocScout <doc-scout@jimut.in>";
 
-const signupTemplate = fs.readFileSync(path.join(__dirname, "templates/verification-signup-template.html"), "utf8");
-const loginTemplate = fs.readFileSync(path.join(__dirname, "templates/verification-login-template.html"), "utf8");
+const signupTemplate = readFileSync(join(__dirname, "templates/verification-signup-template.html"), "utf8");
+const loginTemplate = readFileSync(join(__dirname, "templates/verification-login-template.html"), "utf8");
 
 function fill(template, vars) {
   return template
@@ -23,16 +26,15 @@ function fill(template, vars) {
     .replace(/\{\{verification-link\}\}/g, vars.verificationLink);
 }
 
-exports.handler = async (event) => {
-  if (event.httpMethod !== "POST") return { statusCode: 405, body: "Method Not Allowed" };
+export default async (req) => {
+  if (req.method !== "POST") return new Response("Method Not Allowed", { status: 405 });
 
   let body;
-  try { body = JSON.parse(event.body); } catch { return { statusCode: 400, body: "Invalid JSON" }; }
+  try { body = await req.json(); } catch { return new Response("Invalid JSON", { status: 400 }); }
 
   const { uid, email, displayName, source, origin } = body;
-  if (!uid || !email) return { statusCode: 400, body: "Missing uid or email" };
+  if (!uid || !email) return new Response("Missing uid or email", { status: 400 });
 
-  // Delete old unused tokens for this uid to keep collection clean
   const oldTokens = await db.collection("emailVerifications").where("uid", "==", uid).where("used", "==", false).get();
   const batch = db.batch();
   oldTokens.forEach((d) => batch.delete(d.ref));
@@ -63,8 +65,8 @@ exports.handler = async (event) => {
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${RESEND_API_KEY}` },
       body: JSON.stringify({ from: FROM_NOREPLY, to: email, subject, html }),
     });
-    return { statusCode: 200, body: JSON.stringify({ success: true }) };
+    return Response.json({ success: true });
   } catch (err) {
-    return { statusCode: 500, body: JSON.stringify({ error: err.message }) };
+    return Response.json({ error: err.message }, { status: 500 });
   }
 };

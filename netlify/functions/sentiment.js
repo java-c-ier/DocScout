@@ -7,10 +7,7 @@ async function analyzeSentiment(text, token, retries = 3) {
   for (let attempt = 0; attempt < retries; attempt++) {
     const res = await fetch(HF_API_URL, {
       method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ inputs: text }),
     });
 
@@ -24,30 +21,21 @@ async function analyzeSentiment(text, token, retries = 3) {
     if (!res.ok) throw new Error(`hf_error_${res.status}`);
 
     const data = await res.json();
-    // HF returns [[{label,score},...]] for this model
     const predictions = Array.isArray(data[0]) ? data[0] : data;
     const top = predictions.reduce((a, b) => (a.score > b.score ? a : b));
-    const rating = parseInt(top.label[0], 10); // "5 stars" -> 5
+    const rating = parseInt(top.label[0], 10);
     return { rating: Math.max(1, Math.min(5, rating)), score: top.score };
   }
 }
 
-exports.handler = async (event) => {
-  if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, body: 'Method Not Allowed' };
-  }
+export default async (req) => {
+  if (req.method !== 'POST') return new Response('Method Not Allowed', { status: 405 });
 
   const token = process.env.HUGGINGFACE_API_KEY;
-  if (!token) {
-    return { statusCode: 500, body: JSON.stringify({ error: 'HUGGINGFACE_API_KEY not set' }) };
-  }
+  if (!token) return Response.json({ error: 'HUGGINGFACE_API_KEY not set' }, { status: 500 });
 
   let body;
-  try {
-    body = JSON.parse(event.body);
-  } catch {
-    return { statusCode: 400, body: 'Invalid JSON' };
-  }
+  try { body = await req.json(); } catch { return new Response('Invalid JSON', { status: 400 }); }
 
   const categories = body.reviews || {};
   const output = {};
@@ -83,9 +71,5 @@ exports.handler = async (event) => {
     };
   }
 
-  return {
-    statusCode: 200,
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(output),
-  };
+  return Response.json(output);
 };

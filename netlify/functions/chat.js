@@ -56,7 +56,7 @@ Angul, Balangir, Balasore, Bargarh, Bhadrak, Boudh, Cuttack, Deogarh, Dhenkanal,
 - Users can submit a contact form (name, email, phone, message).
 - Admin receives a notification email; user receives an auto-reply.
 
-### 10. Navigation
+### 9. Navigation
 - Home: main landing page with search, map, about, testimonials, contact, footer.
 - About: info about DocScout.
 - Testimonials: user testimonials.
@@ -71,25 +71,16 @@ Angul, Balangir, Balasore, Bargarh, Bhadrak, Boudh, Cuttack, Deogarh, Dhenkanal,
 - Answer general medical questions (symptoms, diseases, specialists) helpfully but remind users to consult a doctor for diagnosis.
 - If asked something unrelated to healthcare or DocScout, politely redirect.`;
 
-exports.handler = async (event) => {
-  if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, body: 'Method Not Allowed' };
-  }
+export default async (req) => {
+  if (req.method !== 'POST') return new Response('Method Not Allowed', { status: 405 });
 
   const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    return { statusCode: 500, body: JSON.stringify({ error: 'GEMINI_API_KEY not set' }) };
-  }
+  if (!apiKey) return Response.json({ error: 'GEMINI_API_KEY not set' }, { status: 500 });
 
   let body;
-  try {
-    body = JSON.parse(event.body);
-  } catch {
-    return { statusCode: 400, body: 'Invalid JSON' };
-  }
+  try { body = await req.json(); } catch { return new Response('Invalid JSON', { status: 400 }); }
 
   const messages = body.messages || [];
-
   const contents = messages.map((m) => ({
     role: m.role === 'assistant' ? 'model' : 'user',
     parts: [{ text: m.content }],
@@ -108,18 +99,13 @@ exports.handler = async (event) => {
 
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      return { statusCode: res.status, body: JSON.stringify({ error: err.error?.message || 'Gemini API error' }) };
+      return Response.json({ error: err.error?.message || 'Gemini API error' }, { status: res.status });
     }
 
     const data = await res.json();
     const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Sorry, I could not generate a response.';
-
-    return {
-      statusCode: 200,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ reply }),
-    };
+    return Response.json({ reply });
   } catch (err) {
-    return { statusCode: 500, body: JSON.stringify({ error: err.message }) };
+    return Response.json({ error: err.message }, { status: 500 });
   }
 };

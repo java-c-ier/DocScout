@@ -9,8 +9,17 @@ if (!admin.apps.length && process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
 }
 if (admin.apps.length) db = admin.firestore();
 
-const GEMINI_API_URL =
-  'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent';
+const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
+
+// Fallback chain: tried in order, skipped on 429 or model-not-found
+// Order: best quality first → highest-availability (3.1-flash-lite: 500 RPD, 15 RPM) → remaining
+const GEMINI_MODELS = [
+  'gemini-3.5-flash',
+  'gemini-3.1-flash-lite',
+  'gemini-2.5-flash',
+  'gemini-3-flash',
+  'gemini-2.5-flash-lite',
+];
 
 const DISTRICTS = [
   'Angul', 'Balangir', 'Balasore', 'Bargarh', 'Bhadrak', 'Boudh',
@@ -211,30 +220,42 @@ export default async (req) => {
     parts: [{ text: m.content }],
   }));
 
-  try {
-    const res = await fetch(GEMINI_API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: systemPrompt }] },
-        contents,
-        generationConfig: { maxOutputTokens: 2000, temperature: 0.7 },
-      }),
-    });
+  const payload = JSON.stringify({
+    systemInstruction: { parts: [{ text: systemPrompt }] },
+    contents,
+    generationConfig: { maxOutputTokens: 2000, temperature: 0.7 },
+  });
 
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      const msg = res.status === 429
-        ? 'Too many requests. Please wait a moment and try again.'
-        : err.error?.message || `Gemini API error (${res.status})`;
-      console.error('Gemini error:', res.status, JSON.stringify(err));
-      return Response.json({ reply: msg });
+  for (const model of GEMINI_MODELS) {
+    try {
+      const res = await fetch(`${GEMINI_BASE}/${model}:generateContent`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+        body: payload,
+      });
+
+      if (res.status === 429 || res.status === 404) {
+        console.warn(`${model} skipped (${res.status})`);
+        continue;
+      }
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        console.error(`${model} error ${res.status}:`, JSON.stringify(err));
+        continue;
+      }
+
+      const data = await res.json();
+      const reply = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!reply) { console.warn(`${model} returned empty reply`); continue; }
+
+      console.log(`Served by ${model}`);
+      return Response.json({ reply });
+    } catch (err) {
+      console.error(`${model} network error:`, err.message);
+      continue;
     }
-
-    const data = await res.json();
-    const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Sorry, I could not generate a response.';
-    return Response.json({ reply });
-  } catch (err) {
-    return Response.json({ reply: 'Network error. Please try again.' });
   }
+
+  return Response.json({ reply: 'All AI models are currently busy. Please try again in a moment.' });
 };

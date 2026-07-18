@@ -113,6 +113,7 @@ export default function Chatbot() {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [locating, setLocating] = useState(false);
+  const [pendingCoords, setPendingCoords] = useState(null);
   const [lastAnimatedIdx, setLastAnimatedIdx] = useState(-1);
   const bottomRef = useRef(null);
   const inputRef = useRef(null);
@@ -137,6 +138,9 @@ export default function Chatbot() {
     setMessages(history);
     setInput('');
 
+    const coords = pendingCoords;
+    setPendingCoords(null);
+
     if (isGreeting(text)) {
       setMessages((prev) => {
         const next = [...prev, { role: 'assistant', content: WELCOME_TEXT }];
@@ -151,7 +155,7 @@ export default function Chatbot() {
       const res = await fetch('/.netlify/functions/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: history }),
+        body: JSON.stringify({ messages: history, coords }),
       });
       const data = await res.json();
       setMessages((prev) => {
@@ -193,15 +197,11 @@ export default function Chatbot() {
               addr.town?.toLowerCase().includes(dl)
             );
           });
+          setPendingCoords({ lat: latitude, lon: longitude });
           if (district) {
             setInput(`What hospitals are in ${district}?`);
           } else {
-            const outsideMsg = { role: 'assistant', content: "You are outside Odisha. DocScout currently only covers hospitals within Odisha.\n\nIf you visit Odisha, scroll down to the Live Map section on the homepage — it shows real-time hospitals and clinics near your location within 5 km, 10 km, or 20 km.\n\nFor hospitals outside Odisha, please use Google Maps or a local hospital directory." };
-            setMessages((prev) => {
-              const next = [...prev, outsideMsg];
-              setLastAnimatedIdx(next.length - 1);
-              return next;
-            });
+            setInput('Show hospitals near my location');
           }
         } catch {
           setInput('Unable to detect location. Please try again.');

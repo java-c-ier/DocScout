@@ -45,6 +45,7 @@ Angul, Balangir, Balasore, Bargarh, Bhadrak, Boudh, Cuttack, Deogarh, Dhenkanal,
 ### 3. Live Map (NearbyMap section)
 - A separate "Hospitals near you" section with an interactive MapLibre map.
 - Uses OpenStreetMap Overpass API to show real-time hospitals and clinics around the user's location.
+- Works anywhere in the world — not limited to Odisha.
 - Radius options: 5 km, 10 km, 20 km — user can switch between them.
 - Each hospital has a numbered marker on the map; clicking shows a popup with name, type, distance, phone.
 - A sidebar list shows all results sorted by distance.
@@ -85,10 +86,12 @@ Angul, Balangir, Balasore, Bargarh, Bhadrak, Boudh, Cuttack, Deogarh, Dhenkanal,
 ## Your behaviour
 - Be concise, warm, and accurate.
 - For emergencies always say: call 108 (Odisha ambulance) immediately.
-- NEVER list, suggest, or make up any hospital names, websites, or ratings from your own knowledge. You do NOT have hospital data — only DocScout's database does.
-- Hospital names and links will ONLY appear in this prompt under a "Live hospital data" section if they were fetched from the database. If that section is absent, no hospital data is available.
-- If a user asks about hospitals in an Odisha district and no "Live hospital data" section is present, tell them to use the DocScout search bar for that district.
-- If a user is outside Odisha or asks about hospitals outside Odisha, say: "DocScout currently only covers hospitals in Odisha. However, if you visit Odisha, you can use the Live Map section on the homepage — it shows real-time hospitals and clinics around your location within a 5 km, 10 km, or 20 km radius using OpenStreetMap data. For hospitals outside Odisha, please use Google Maps or a local hospital directory."
+- NEVER list, suggest, or make up any hospital names, websites, or ratings from your own knowledge. You do NOT have hospital data — only DocScout's database and OpenStreetMap do.
+- Hospital names and links will ONLY appear in this prompt under a "Live hospital data" or "Live nearby hospitals" section. If those sections are absent, no hospital data is available.
+- When listing hospitals, only show name and website/Google Maps link. Keep it brief.
+- For detailed hospital info (doctors, departments, contact, reviews, ratings), always say: "For full details, search for this hospital in the DocScout search bar — select the district and you will see complete information including doctors, reviews, and contact details."
+- If a user asks about hospitals in an Odisha district and no data section is present, tell them to use the DocScout search bar for that district.
+- If a user is outside Odisha or asks about hospitals outside Odisha, explain that DocScout's database covers only Odisha, but the Live Map on the homepage works worldwide using OpenStreetMap — scroll down and click Show hospitals near me.
 - If asked about a feature, explain it clearly with steps if needed.
 - Answer general medical questions (symptoms, diseases, specialists) helpfully but remind users to consult a doctor for diagnosis.
 - If asked something unrelated to healthcare or DocScout, politely redirect.
@@ -113,6 +116,23 @@ async function fetchHospitals(district) {
     .map((h) => ({ name: h.Name, website: h.Website || '', type: h.Type || '' }));
 }
 
+async function fetchNearbyOverpass(lat, lon, radiusMeters = 5000) {
+  const query = `[out:json][timeout:10];(node["amenity"="hospital"](around:${radiusMeters},${lat},${lon});node["amenity"="clinic"](around:${radiusMeters},${lat},${lon}););out body;`;
+  const res = await fetch('https://overpass-api.de/api/interpreter', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: `data=${encodeURIComponent(query)}`,
+  });
+  const data = await res.json();
+  return (data.elements || [])
+    .filter((e) => e.tags?.name)
+    .slice(0, 15)
+    .map((e) => ({
+      name: e.tags.name,
+      mapsLink: `https://www.google.com/maps?q=${e.lat},${e.lon}`,
+    }));
+}
+
 export default async (req) => {
   if (req.method !== 'POST') return new Response('Method Not Allowed', { status: 405 });
 
@@ -123,23 +143,34 @@ export default async (req) => {
   try { body = await req.json(); } catch { return new Response('Invalid JSON', { status: 400 }); }
 
   const messages = body.messages || [];
+  const coords = body.coords || null;
   const lastUserMsg = [...messages].reverse().find((m) => m.role === 'user')?.content || '';
 
   let systemPrompt = SYSTEM_PROMPT;
 
   const district = detectDistrict(lastUserMsg);
-  if (district && db) {
-    try {
-      const hospitals = await fetchHospitals(district);
-      if (hospitals.length > 0) {
-        const hospitalList = hospitals
-          .map((h) => `- ${h.name}${h.type ? ` (${h.type})` : ''}${h.website ? `: ${h.website}` : ''}`)
-          .join('\n');
-        systemPrompt += `\n\n## Live hospital data for ${district} district (from DocScout database)\nList these hospitals for the user. Show name and website link if present:\n${hospitalList}`;
-      }
-    } catch (e) {
-      console.error('Firestore fetch error:', e.message);
-    }
+
+  const [overpassResults, firestoreResults] = await Promise.all([
+    coords?.lat && coords?.lon
+      ? fetchNearbyOverpass(coords.lat, coords.lon).catch((e) => { console.error('Overpass error:', e.message); return []; })
+      : Promise.resolve(null),
+    district && db
+      ? fetchHospitals(district).catch((e) => { console.error('Firestore error:', e.message); return []; })
+      : Promise.resolve(null),
+  ]);
+
+  if (overpassResults?.length > 0) {
+    const list = overpassResults.map((h) => `- ${h.name}: ${h.mapsLink}`).join('\n');
+    systemPrompt += `\n\n## Live nearby hospitals (OpenStreetMap, within 5 km of user's GPS location)\nList these with their Google Maps links:\n${list}`;
+  } else if (coords?.lat && coords?.lon) {
+    systemPrompt += `\n\n## Live nearby hospitals\nNo hospitals found within 5 km of the user's location via OpenStreetMap.`;
+  }
+
+  if (firestoreResults?.length > 0) {
+    const list = firestoreResults
+      .map((h) => `- ${h.name}${h.type ? ` (${h.type})` : ''}${h.website ? `: ${h.website}` : ''}`)
+      .join('\n');
+    systemPrompt += `\n\n## DocScout database hospitals for ${district} district\nAlso list these with website links if available:\n${list}`;
   }
 
   const contents = messages.map((m) => ({

@@ -197,16 +197,9 @@ export default async (req) => {
         systemPrompt += `\n\n## Additional DocScout database hospitals for ${district} district (not in nearby list above)\nMention these as well:\n${dbList}`;
       }
     }
-  } else if (coords?.lat && coords?.lon) {
-    systemPrompt += `\n\n## Live nearby hospitals\nNo hospitals found within 10 km via OpenStreetMap. Tell the user to try the Live Map section on the homepage which supports up to 20 km radius.`;
+  }
 
-    if (firestoreResults?.length > 0) {
-      const list = firestoreResults
-        .map((h) => `- ${h.name}${h.type ? ` (${h.type})` : ''}${h.website ? `: ${h.website}` : ''}`)
-        .join('\n');
-      systemPrompt += `\n\n## DocScout database hospitals for ${district} district\nList these with website links if available:\n${list}`;
-    }
-  } else if (firestoreResults?.length > 0) {
+  if (firestoreResults?.length > 0 && !(overpassResults?.length > 0)) {
     const list = firestoreResults
       .map((h) => `- ${h.name}${h.type ? ` (${h.type})` : ''}${h.website ? `: ${h.website}` : ''}`)
       .join('\n');

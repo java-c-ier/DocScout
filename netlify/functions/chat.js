@@ -1,5 +1,24 @@
+import admin from 'firebase-admin';
+
+let db = null;
+if (!admin.apps.length && process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
+  const serviceAccount = JSON.parse(
+    Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT_KEY, 'base64').toString('utf8')
+  );
+  admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
+}
+if (admin.apps.length) db = admin.firestore();
+
 const GEMINI_API_URL =
-  'https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent';
+  'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent';
+
+const DISTRICTS = [
+  'Angul', 'Balangir', 'Balasore', 'Bargarh', 'Bhadrak', 'Boudh',
+  'Cuttack', 'Deogarh', 'Dhenkanal', 'Gajapati', 'Ganjam', 'Jagatsinghpur',
+  'Jajpur', 'Jharsuguda', 'Kalahandi', 'Kandhamal', 'Kendrapada', 'Keonjhar',
+  'Khordha', 'Koraput', 'Malkangiri', 'Mayurbhanj', 'Nabarangpur', 'Nayagarh',
+  'Nuapada', 'Puri', 'Rayagada', 'Sambalpur', 'Subarnapur', 'Sundargarh',
+];
 
 const SYSTEM_PROMPT = `You are Scouty, a helpful AI assistant for DocScout — a healthcare finder platform for Odisha, India. You are embedded inside the DocScout web app.
 
@@ -66,10 +85,24 @@ Angul, Balangir, Balasore, Bargarh, Bhadrak, Boudh, Cuttack, Deogarh, Dhenkanal,
 ## Your behaviour
 - Be concise, warm, and accurate.
 - For emergencies always say: call 108 (Odisha ambulance) immediately.
-- Never make up specific hospital names, doctor names, or ratings — direct users to search on DocScout.
+- When hospital data is provided to you, list the hospitals with their names and website links (if available). Do not make up hospital names or data.
+- If no hospital data is provided for a district query, direct users to search on DocScout.
 - If asked about a feature, explain it clearly with steps if needed.
 - Answer general medical questions (symptoms, diseases, specialists) helpfully but remind users to consult a doctor for diagnosis.
 - If asked something unrelated to healthcare or DocScout, politely redirect.`;
+
+function detectDistrict(text) {
+  const lower = text.toLowerCase();
+  return DISTRICTS.find((d) => lower.includes(d.toLowerCase())) || null;
+}
+
+async function fetchHospitals(district) {
+  const snap = await db.collection('Odisha').doc(district).collection('Hospitals').get();
+  return snap.docs
+    .map((d) => d.data())
+    .filter((h) => h.Name && h.Name !== 'NA')
+    .map((h) => ({ name: h.Name, website: h.Website || '', type: h.Type || '' }));
+}
 
 export default async (req) => {
   if (req.method !== 'POST') return new Response('Method Not Allowed', { status: 405 });
@@ -81,19 +114,38 @@ export default async (req) => {
   try { body = await req.json(); } catch { return new Response('Invalid JSON', { status: 400 }); }
 
   const messages = body.messages || [];
+  const lastUserMsg = [...messages].reverse().find((m) => m.role === 'user')?.content || '';
+
+  let systemPrompt = SYSTEM_PROMPT;
+
+  const district = detectDistrict(lastUserMsg);
+  if (district && db) {
+    try {
+      const hospitals = await fetchHospitals(district);
+      if (hospitals.length > 0) {
+        const hospitalList = hospitals
+          .map((h) => `- ${h.name}${h.type ? ` (${h.type})` : ''}${h.website ? `: ${h.website}` : ''}`)
+          .join('\n');
+        systemPrompt += `\n\n## Live hospital data for ${district} district (from DocScout database)\nList these hospitals for the user. Show name and website link if present:\n${hospitalList}`;
+      }
+    } catch (e) {
+      console.error('Firestore fetch error:', e.message);
+    }
+  }
+
   const contents = messages.map((m) => ({
     role: m.role === 'assistant' ? 'model' : 'user',
     parts: [{ text: m.content }],
   }));
 
   try {
-    const res = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
+    const res = await fetch(GEMINI_API_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
       body: JSON.stringify({
-        systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+        systemInstruction: { parts: [{ text: systemPrompt }] },
         contents,
-        generationConfig: { maxOutputTokens: 512, temperature: 0.7 },
+        generationConfig: { maxOutputTokens: 800, temperature: 0.7 },
       }),
     });
 

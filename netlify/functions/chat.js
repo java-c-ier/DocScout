@@ -99,13 +99,16 @@ export default async (req) => {
 
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      return Response.json({ error: err.error?.message || 'Gemini API error' }, { status: res.status });
+      const msg = res.status === 429
+        ? 'Too many requests. Please wait a moment and try again.'
+        : err.error?.message || 'Gemini API error';
+      return Response.json({ reply: msg });
     }
 
     const data = await res.json();
     const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Sorry, I could not generate a response.';
     return Response.json({ reply });
   } catch (err) {
-    return Response.json({ error: err.message }, { status: 500 });
+    return Response.json({ reply: 'Network error. Please try again.' });
   }
 };

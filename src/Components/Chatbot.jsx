@@ -110,7 +110,7 @@ export default function Chatbot() {
       });
       const data = await res.json();
       setMessages((prev) => {
-        const next = [...prev, { role: 'assistant', content: data.reply || 'Sorry, something went wrong.' }];
+        const next = [...prev, { role: 'assistant', content: data.reply || data.error || 'Sorry, something went wrong.' }];
         setLastAnimatedIdx(next.length - 1);
         return next;
       });

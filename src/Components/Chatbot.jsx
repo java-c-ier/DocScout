@@ -132,31 +132,12 @@ export default function Chatbot() {
   const isLocationQuery = (text) =>
     /where\s*(am\s*i|is\s*my\s*location)|my\s*location|near\s*(me|my)|nearby\s*hospital|hospitals?\s*near|show\s*nearby|current\s*location/i.test(text);
 
-  const send = async () => {
-    const text = input.trim();
+  const sendMessage = async (text, coords = null) => {
     if (!text || loading) return;
 
     const userMsg = { role: 'user', content: text };
     const history = [...messages, userMsg];
     setMessages(history);
-    setInput('');
-
-    const coords = pendingCoords;
-    setPendingCoords(null);
-
-    if (isGreeting(text)) {
-      setMessages((prev) => {
-        const next = [...prev, { role: 'assistant', content: WELCOME_TEXT }];
-        setLastAnimatedIdx(next.length - 1);
-        return next;
-      });
-      return;
-    }
-
-    if (isLocationQuery(text) && !coords) {
-      handleLocation();
-      return;
-    }
 
     setLoading(true);
     try {
@@ -182,6 +163,29 @@ export default function Chatbot() {
     }
   };
 
+  const send = async () => {
+    const text = input.trim();
+    if (!text || loading) return;
+    setInput('');
+    setPendingCoords(null);
+
+    if (isGreeting(text)) {
+      setMessages((prev) => {
+        const next = [...prev, { role: 'user', content: text }, { role: 'assistant', content: WELCOME_TEXT }];
+        setLastAnimatedIdx(next.length - 1);
+        return next;
+      });
+      return;
+    }
+
+    if (isLocationQuery(text) && !pendingCoords) {
+      handleLocation();
+      return;
+    }
+
+    await sendMessage(text, pendingCoords);
+  };
+
   const handleLocation = async () => {
     if (!navigator.geolocation) return;
     setLocating(true);
@@ -205,23 +209,26 @@ export default function Chatbot() {
               addr.town?.toLowerCase().includes(dl)
             );
           });
-          setPendingCoords({ lat: latitude, lon: longitude });
-          if (district) {
-            setInput(`What hospitals are in ${district}?`);
-          } else {
-            setInput('Show hospitals near my location');
-          }
-        } catch {
-          setInput('Unable to detect location. Please try again.');
-        } finally {
+          const coords = { lat: latitude, lon: longitude };
+          const text = district ? `What hospitals are in ${district}?` : 'Show hospitals near my location';
           setLocating(false);
-          inputRef.current?.focus();
+          await sendMessage(text, coords);
+        } catch {
+          setLocating(false);
+          setMessages((prev) => {
+            const next = [...prev, { role: 'assistant', content: 'Unable to detect location. Please try again.' }];
+            setLastAnimatedIdx(next.length - 1);
+            return next;
+          });
         }
       },
       () => {
         setLocating(false);
-        setInput('Location access denied. Please allow location to use this feature.');
-        inputRef.current?.focus();
+        setMessages((prev) => {
+          const next = [...prev, { role: 'assistant', content: 'Location access denied. Please allow location permission and try again.' }];
+          setLastAnimatedIdx(next.length - 1);
+          return next;
+        });
       }
     );
   };

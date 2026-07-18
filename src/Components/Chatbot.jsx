@@ -129,6 +129,9 @@ export default function Chatbot() {
   const isGreeting = (text) =>
     /^\s*(hi+|hello+|hey+|hiya|howdy|greetings|good\s*(morning|afternoon|evening|day)|sup|what'?s\s*up)\s*[!?.]*\s*$/i.test(text);
 
+  const isLocationQuery = (text) =>
+    /where\s*(am\s*i|is\s*my\s*location)|my\s*location|near\s*(me|my)|nearby\s*hospital|hospitals?\s*near|show\s*nearby|current\s*location/i.test(text);
+
   const send = async () => {
     const text = input.trim();
     if (!text || loading) return;
@@ -147,6 +150,11 @@ export default function Chatbot() {
         setLastAnimatedIdx(next.length - 1);
         return next;
       });
+      return;
+    }
+
+    if (isLocationQuery(text) && !coords) {
+      handleLocation();
       return;
     }
 

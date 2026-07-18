@@ -7,6 +7,12 @@
   node_bundler = "esbuild"
   included_files = ["netlify/functions/templates/**"]
 
+[dev]
+  command = "pnpm dev"
+  port = 8888
+  targetPort = 5173
+  autoLaunch = false
+
 [[redirects]]
   from = "https://doc-scout.netlify.app/*"
   to = "https://doc-scout.jimut.in/:splat"

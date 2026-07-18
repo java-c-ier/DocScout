@@ -97,7 +97,7 @@ Angul, Balangir, Balasore, Bargarh, Bhadrak, Boudh, Cuttack, Deogarh, Dhenkanal,
 - Only mention the emergency number (108 — Odisha ambulance) if the user explicitly asks about ambulance, emergency contact, or emergency services. Do NOT add it to regular answers.
 - NEVER list, suggest, or make up any hospital names, websites, or ratings from your own knowledge. You do NOT have hospital data — only DocScout's database and OpenStreetMap do.
 - Hospital names and links will ONLY appear in this prompt under a "Live hospital data" or "Live nearby hospitals" section. If those sections are absent, no hospital data is available.
-- When listing hospitals from the data sections below, list ALL of them — do not skip or truncate. Show name and website/link only (no type, no rating).
+- When listing hospitals from the data sections below, show only the provided entries (max 10). After the list, always say: "For the complete list, search for [district name] in the DocScout search bar." Show name and website/link only (no type, no rating).
 - For detailed hospital info (doctors, departments, contact, reviews, ratings), always say: "For full details, search for this hospital in the DocScout search bar — select the district and you will see complete information including doctors, reviews, and contact details."
 - If a user asks about hospitals in an Odisha district and no data section is present, tell them to use the DocScout search bar for that district.
 - If a user asks about their location or nearby hospitals and NO "Live nearby hospitals" section exists in this prompt AND no GPS data was provided, tell them to click the 📍 location button in the chat input bar.
@@ -200,19 +200,23 @@ export default async (req) => {
     if (firestoreResults?.length > 0) {
       const deduped = firestoreResults.filter((h) => !overpassNames.has(h.name.toLowerCase()));
       if (deduped.length > 0) {
-        const dbList = deduped
-          .map((h) => `- ${h.name}${h.type ? ` (${h.type})` : ''}${h.website ? `: ${h.website}` : ''}`)
+        const top10 = deduped.slice(0, 10);
+        const total = deduped.length;
+        const dbList = top10
+          .map((h) => `- ${h.name}${h.website ? `: ${h.website}` : ''}`)
           .join('\n');
-        systemPrompt += `\n\n## Additional DocScout database hospitals for ${district} district (not in nearby list above)\nMention these as well:\n${dbList}`;
+        systemPrompt += `\n\n## DocScout database hospitals for ${district} district (showing 10 of ${total})\nList these, then tell the user to search for ${district} in the DocScout search bar to see all ${total} hospitals:\n${dbList}`;
       }
     }
   }
 
   if (firestoreResults?.length > 0 && !(overpassResults?.length > 0)) {
-    const list = firestoreResults
-      .map((h) => `- ${h.name}${h.type ? ` (${h.type})` : ''}${h.website ? `: ${h.website}` : ''}`)
+    const top10 = firestoreResults.slice(0, 10);
+    const total = firestoreResults.length;
+    const list = top10
+      .map((h) => `- ${h.name}${h.website ? `: ${h.website}` : ''}`)
       .join('\n');
-    systemPrompt += `\n\n## DocScout database hospitals for ${district} district\nList these with website links if available:\n${list}`;
+    systemPrompt += `\n\n## DocScout database hospitals for ${district} district (showing 10 of ${total})\nList these, then tell the user to search for ${district} in the DocScout search bar to see all ${total} hospitals:\n${list}`;
   }
 
   const contents = messages.map((m) => ({

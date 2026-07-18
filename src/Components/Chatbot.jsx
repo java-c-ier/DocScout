@@ -170,7 +170,11 @@ export default function Chatbot() {
   const isFarewell = (text) =>
     /^\s*(bye|goodbye|see\s*you|thanks|thank\s*you|ok\s*thanks|ok\s*bye|that'?s?\s*(all|it)|done)\s*[!?.]*\s*$/i.test(text);
 
+  const hasExplicitLocation = (text) =>
+    /\b(i[' ]?m|i\s+am)\s+(currently\s+)?in\s+\w/i.test(text);
+
   const isLocationQuery = (text) =>
+    !hasExplicitLocation(text) &&
     /where\s*(am\s*i|is\s*my\s*location)|my\s*(current\s*)?location|(show\s*)?(hospitals?|clinics?)\s*near\s*(me|my)|nearby\s*(hospitals?|clinics?)|show\s*nearby|current\s*location/i.test(text);
 
   const callApi = async (history, coords) => {

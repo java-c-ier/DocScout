@@ -1,9 +1,5 @@
-import { createContext, useContext, useState, useEffect } from "react";
-import { onAuthStateChanged, signOut } from "firebase/auth";
-import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
-import { auth, db } from "./Firebase";
-
-const ADMIN_EMAIL = "jimutksahoo99@gmail.com";
+import { createContext, useContext, useState, useEffect } from 'react';
+import { supabase } from './supabase';
 
 const BLOCKED_MSG = "Your account doesn't exist or is inactive. Please contact your admin or fill the contact form.";
 
@@ -15,44 +11,47 @@ export function AuthProvider({ children }) {
   const [authReady, setAuthReady] = useState(false);
   const [blockedError, setBlockedError] = useState(null);
 
-  useEffect(() => {
-    if (!auth) { setAuthReady(true); return; }
-    const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (firebaseUser) {
-        await firebaseUser.reload();
-        setUser({ ...firebaseUser });
+  const loadProfile = async (authUser) => {
+    const { data, error } = await supabase.rpc('get_my_profile');
 
-        if (db) {
-          const isGoogle = firebaseUser.providerData?.[0]?.providerId === "google.com";
-          const userRef = doc(db, "users", firebaseUser.uid);
-          const snap = await getDoc(userRef);
-          if (snap.exists()) {
-            if (!isGoogle && snap.data().blocked) {
-              await signOut(auth);
-              setBlockedError(BLOCKED_MSG);
-              return;
-            }
-            setRole(snap.data().role || "user");
-          } else {
-            const assignedRole = firebaseUser.email === ADMIN_EMAIL ? "admin" : "user";
-            await setDoc(userRef, {
-              email: firebaseUser.email,
-              displayName: firebaseUser.displayName || "",
-              role: assignedRole,
-              provider: firebaseUser.providerData?.[0]?.providerId || "unknown",
-              emailVerified: isGoogle,
-              createdAt: serverTimestamp(),
-            });
-            setRole(assignedRole);
-          }
-        }
+    if (error || !data) {
+      await supabase.auth.signOut();
+      setBlockedError(BLOCKED_MSG);
+      setUser(null);
+      setRole(null);
+      return;
+    }
+    if (data.blocked) {
+      await supabase.auth.signOut();
+      setBlockedError(BLOCKED_MSG);
+      setUser(null);
+      setRole(null);
+      return;
+    }
+    setUser({
+      ...authUser,
+      displayName: data.display_name || authUser.user_metadata?.display_name || '',
+    });
+    setRole(data.role || 'user');
+  };
+
+  useEffect(() => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (session?.user) await loadProfile(session.user);
+      setAuthReady(true);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session?.user) {
+        await loadProfile(session.user);
       } else {
         setUser(null);
         setRole(null);
       }
       setAuthReady(true);
     });
-    return unsub;
+
+    return () => subscription.unsubscribe();
   }, []);
 
   return (

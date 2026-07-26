@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router";
-import { signOut } from "firebase/auth";
-import { auth } from "../Firebase";
+import { supabase } from "../supabase";
 import { useAuth } from "../AuthContext";
 import "../Styles/Nav.css";
 
@@ -18,26 +17,20 @@ export function Nav() {
   const isAdminPage = location.pathname === "/admin";
 
   useEffect(() => {
-    const handleProfileUpdated = () => {
-      if (auth.currentUser) setUser({ ...auth.currentUser });
-    };
+    const handleProfileUpdated = () => {};
     window.addEventListener("profileUpdated", handleProfileUpdated);
     return () => window.removeEventListener("profileUpdated", handleProfileUpdated);
   }, []);
 
   const handleSignOut = () => {
-    if (!auth) return;
     document.body.style.transition = "opacity 0.25s ease";
     document.body.style.opacity = "0";
-    setTimeout(() => {
-      signOut(auth).then(() => {
-        setUser(null);
-        setOpenNav(false);
-        navigate("/");
-        setTimeout(() => {
-          document.body.style.opacity = "1";
-        }, 50);
-      });
+    setTimeout(async () => {
+      await supabase.auth.signOut();
+      setUser(null);
+      setOpenNav(false);
+      navigate("/");
+      setTimeout(() => { document.body.style.opacity = "1"; }, 50);
     }, 250);
   };
 
@@ -137,25 +130,11 @@ export function Nav() {
                         <div className="min-w-0">
                           <p className="text-base font-bold text-gray-900 truncate">{user.displayName || user.email?.split("@")[0] || "User"}</p>
                           <p className="text-sm text-gray-500 truncate">{user.email}</p>
-                          <span className={`inline-flex items-center gap-1 mt-1 text-[11px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wide ${user.providerData?.[0]?.providerId === "google.com" ? "bg-blue-50 text-blue-600 border border-blue-600" : "bg-gray-100 text-gray-600 border border-gray-400"}`}>
-                            {user.providerData?.[0]?.providerId === "google.com" ? (
-                              <>
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" className="h-3 w-3 shrink-0">
-                                  <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.6 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34.5 6.5 29.5 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.2-.1-2.4-.4-3.5z" />
-                                  <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 16 19 13 24 13c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34.5 6.5 29.5 4 24 4 16.3 4 9.7 8.3 6.3 14.7z" />
-                                  <path fill="#4CAF50" d="M24 44c5.2 0 9.9-1.9 13.5-5l-6.2-5.2C29.4 35.5 26.8 36 24 36c-5.2 0-9.7-3.4-11.3-8l-6.5 5C9.8 39.7 16.4 44 24 44z" />
-                                  <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.3-4.3 5.8l6.2 5.2C41.4 36 44 30.4 44 24c0-1.2-.1-2.4-.4-3.5z" />
-                                </svg>
-                                Google Account
-                              </>
-                            ) : (
-                              <>
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                                </svg>
-                                Email &amp; Password
-                              </>
-                            )}
+                          <span className="inline-flex items-center gap-1 mt-1 text-[11px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wide bg-blue-50 text-blue-600 border border-blue-300">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z" />
+                            </svg>
+                            One-Click Login
                           </span>
                         </div>
                       </div>

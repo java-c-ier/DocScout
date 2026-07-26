@@ -1,7 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
-import { db } from "../Firebase";
-import { doc, collection, getDocs } from "firebase/firestore";
-import { addAspectReview } from "../Firebase";
+import { supabase, addReview } from "../supabase";
 import SentimentAnalysis from "./SentimentAnalysis";
 
 // ─── Modal ────────────────────────────────────────────────────────────────────
@@ -283,11 +281,12 @@ const Hospitals = ({ hospitals, hasSearched, searchedDistrict, userCoords, sorti
     try {
       const district = selectedHospital.district;
       const name = selectedHospital.Name;
+      const hid = selectedHospital.id;
       await Promise.all([
-        addAspectReview(district, name, "Cleanliness_and_Hygiene", cleanliness),
-        addAspectReview(district, name, "Doctor_and_Staff_Behaviour", behaviour),
-        addAspectReview(district, name, "Quality_of_Care", care),
-        addAspectReview(district, name, "Wait_Times_and_Efficiency", efficiency),
+        addReview(hid, "Cleanliness_and_Hygiene", cleanliness),
+        addReview(hid, "Doctor_and_Staff_Behaviour", behaviour),
+        addReview(hid, "Quality_of_Care", care),
+        addReview(hid, "Wait_Times_and_Efficiency", efficiency),
       ]);
       alert("Review added successfully!");
       handleCloseReviewDialog();
@@ -314,16 +313,18 @@ const Hospitals = ({ hospitals, hasSearched, searchedDistrict, userCoords, sorti
     setDeptDoctorsReady(!!cached);
     setOpenDeptDialog(true);
 
-    if (cached || !db || names.length === 0) return;
+    if (cached || names.length === 0) return;
 
-    const district = searchedDistrict || "Unknown District";
-    const hospDocRef = doc(db, "Odisha", district, "Hospitals", hospId);
     (async () => {
       const fetched = {};
       await Promise.all(
         names.map(async (dept) => {
-          const snap = await getDocs(collection(hospDocRef, dept));
-          fetched[dept] = snap.docs.map((d) => d.data());
+          const { data } = await supabase
+            .from('doctors')
+            .select('*')
+            .eq('hospital_id', hospital.id)
+            .eq('department', dept);
+          fetched[dept] = data || [];
         })
       );
       deptDoctorsCacheRef.current[hospId] = fetched;

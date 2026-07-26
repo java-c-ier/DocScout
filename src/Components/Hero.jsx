@@ -2,9 +2,8 @@ import React, { useState, useRef, useEffect } from "react";
 import Doctor from "../assets/Doctor.png";
 import "../Styles/Hero.css";
 import { TbSearch } from "react-icons/tb";
-import { collection, getDocs } from "firebase/firestore";
-import { db } from "../Firebase";
-import { ToastContainer, toast } from "react-toastify";
+import { supabase } from "../supabase";
+import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import SearchSuggestions from "./SearchSuggestions";
 import Hospitals from "./Hospitals";
@@ -92,20 +91,23 @@ function Hero({ onRestoreComplete }) {
   };
 
   const fetchHospitals = async () => {
-    if (!db) { toast.error("Firebase not configured."); return; }
     setUserCoords(null);
     setSortingByDistance(false);
     try {
-      const hospitalsCollection = collection(db, "Odisha", searchInput, "Hospitals");
-      const snapshot = await getDocs(hospitalsCollection);
-      const hospitalsData = snapshot.empty ? [] : snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-      setHospitalList(hospitalsData);
+      const { data, error } = await supabase
+        .from('hospitals')
+        .select('*')
+        .eq('district', searchInput)
+        .eq('state', 'Odisha')
+        .eq('status', 'active');
+      if (error) throw error;
+      setHospitalList(data || []);
       setHasSearched(true);
       setCommittedDistrict(searchInput);
       sessionStorage.setItem(LAST_SEARCH_KEY, searchInput);
       scrollToHospitals();
     } catch (error) {
-      console.error("Error fetching hospitals:", error);
+      console.error('Error fetching hospitals:', error);
     }
   };
 
@@ -118,21 +120,24 @@ function Hero({ onRestoreComplete }) {
 
   useEffect(() => {
     const saved = sessionStorage.getItem(LAST_SEARCH_KEY);
-    if (!saved || !districts.includes(saved) || !db) {
+    if (!saved || !districts.includes(saved)) {
       onRestoreComplete?.();
       return;
     }
     setSearchInput(saved);
     (async () => {
       try {
-        const hospitalsCollection = collection(db, "Odisha", saved, "Hospitals");
-        const snapshot = await getDocs(hospitalsCollection);
-        const hospitalsData = snapshot.empty ? [] : snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-        setHospitalList(hospitalsData);
+        const { data } = await supabase
+          .from('hospitals')
+          .select('*')
+          .eq('district', saved)
+          .eq('state', 'Odisha')
+        .eq('status', 'active');
+        setHospitalList(data || []);
         setHasSearched(true);
         setCommittedDistrict(saved);
       } catch (error) {
-        console.error("Error restoring hospitals:", error);
+        console.error('Error restoring hospitals:', error);
       } finally {
         onRestoreComplete?.();
       }
@@ -141,14 +146,14 @@ function Hero({ onRestoreComplete }) {
 
   const handleNearbyHospitals = () => {
     if (!navigator.geolocation) {
-      toast.error("Geolocation is not supported by your browser.");
+      toast.error("Geolocation is not supported by your browser.", { position: "top-center" });
       return;
     }
     setLoadingNearby(true);
 
     const showResult = (type, message, autoClose = 5000) => {
       toast.dismiss();
-      setTimeout(() => toast[type](message, { autoClose, toastId: "nearby-result" }), 100);
+      setTimeout(() => toast[type](message, { autoClose, toastId: "nearby-result", position: "top-center" }), 100);
     };
 
     navigator.geolocation.getCurrentPosition(
@@ -182,9 +187,12 @@ function Hero({ onRestoreComplete }) {
 
           setSearchInput(detectedDistrict);
 
-          if (!db) { showResult("error", "Firebase not configured."); setLoadingNearby(false); return; }
-          const snapshot = await getDocs(collection(db, "Odisha", detectedDistrict, "Hospitals"));
-          const hospitalsData = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+          const { data: hospitalsData } = await supabase
+            .from('hospitals')
+            .select('*')
+            .eq('district', detectedDistrict)
+            .eq('state', 'Odisha')
+        .eq('status', 'active');
 
           setHospitalList(hospitalsData);
           setHasSearched(true);
@@ -240,15 +248,15 @@ function Hero({ onRestoreComplete }) {
     if (districts.includes(searchInput)) {
       fetchHospitals();
     } else {
-      toast.error("Please enter a valid district!", { toastId: "invalid-district" });
+      toast.error("Please enter a valid district!", { toastId: "invalid-district", position: "top-center" });
     }
   };
 
   const handleDiseaseSearchClick = () => {
     if (!districts.includes(searchInput)) {
-      toast.error("Please enter a valid district first!", { toastId: "invalid-district" });
+      toast.error("Please enter a valid district first!", { toastId: "invalid-district", position: "top-center" });
     } else if (!diseases.includes(diseaseInput)) {
-      toast.error("Please enter a valid disease or specialty!", { toastId: "invalid-disease" });
+      toast.error("Please enter a valid disease or specialty!", { toastId: "invalid-disease", position: "top-center" });
     } else {
       fetchHospitals();
     }
@@ -361,20 +369,6 @@ function Hero({ onRestoreComplete }) {
         <Hospitals hospitals={hospitalList} hasSearched={hasSearched} searchedDistrict={committedDistrict} userCoords={userCoords} sortingByDistance={sortingByDistance} />
       </div>
 
-      <ToastContainer
-        toastClassName="toast-container"
-        position="top-center"
-        autoClose={3000}
-        hideProgressBar
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss={false}
-        draggable
-        pauseOnHover
-        theme="colored"
-        style={{ width: "420px", maxWidth: "calc(100vw - 32px)" }}
-      />
     </div>
   );
 }

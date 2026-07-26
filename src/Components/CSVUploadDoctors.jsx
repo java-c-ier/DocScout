@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import Papa from "papaparse";
-import { addDoctor } from "../Firebase";
+import { addDoctor } from "../supabase";
 
 function CSVUploadDoctors() {
   const [file, setFile] = useState(null);

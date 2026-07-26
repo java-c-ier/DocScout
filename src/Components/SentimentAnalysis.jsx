@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "../Firebase";
+import { getReviewsByAspect } from "../supabase";
 import { Star, StarHalf, StarOff } from "lucide-react";
 
 const ASPECTS = [
@@ -112,17 +111,10 @@ const SentimentAnalysis = ({ hospital, searchedDistrict }) => {
   const [error, setError] = useState(null);
 
   const retrieveReviews = async () => {
-    if (!db) return {};
-    const hospId = hospital.Name ? hospital.Name.trim().replace(/\s+/g, "_") : "Unknown_Hospital";
-    const district = searchedDistrict || "Unknown_District";
+    const grouped = await getReviewsByAspect(hospital.id);
+    // Ensure all aspects exist (empty array if no reviews yet)
     const result = {};
-    await Promise.all(
-      ASPECTS.map(async (aspect) => {
-        const ref = doc(db, "Odisha", district, "Hospitals", hospId, "Reviews", "reviews", "aspects_reviews", aspect);
-        const snap = await getDoc(ref);
-        result[aspect] = snap.exists() && Array.isArray(snap.data().review) ? snap.data().review : [];
-      })
-    );
+    ASPECTS.forEach((a) => { result[a] = grouped[a] || []; });
     return result;
   };
 

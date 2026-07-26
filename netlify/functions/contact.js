@@ -2,15 +2,15 @@ import { readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
+const __funcDir = dirname(fileURLToPath(import.meta.url));
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 const TO_EMAIL = "jimutksahoo99@gmail.com";
 const FROM_AUTOREPLY = "DocScout <doc-scout@jimut.in>";
 const FROM_NOREPLY = "No Reply <no-reply@jimut.in>";
 
-const notificationTemplate = readFileSync(join(__dirname, "templates/contact-form-template.html"), "utf8");
-const autoReplyTemplate = readFileSync(join(__dirname, "templates/autoreply-template.html"), "utf8");
+const notificationTemplate = readFileSync(join(__funcDir, "templates/contact-form-template.html"), "utf8");
+const autoReplyTemplate = readFileSync(join(__funcDir, "templates/autoreply-template.html"), "utf8");
 
 function fill(template, { firstName, lastName, email, phone, message }) {
   return template

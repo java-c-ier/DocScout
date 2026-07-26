@@ -1,13 +1,8 @@
-import admin from 'firebase-admin';
+import { createClient } from '@supabase/supabase-js';
 
-let db = null;
-if (!admin.apps.length && process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
-  const serviceAccount = JSON.parse(
-    Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT_KEY, 'base64').toString('utf8')
-  );
-  admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
-}
-if (admin.apps.length) db = admin.firestore();
+const supabase = process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY
+  ? createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
+  : null;
 
 const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
 
@@ -120,11 +115,9 @@ function detectDistrict(text) {
 }
 
 async function fetchHospitals(district) {
-  const snap = await db.collection('Odisha').doc(district).collection('Hospitals').get();
-  return snap.docs
-    .map((d) => d.data())
-    .filter((h) => h.Name && h.Name !== 'NA')
-    .map((h) => ({ name: h.Name, website: h.Website || '', type: h.Type || '' }));
+  if (!supabase) return [];
+  const { data } = await supabase.rpc('get_hospitals_by_district', { p_district: district });
+  return (data || []).map((h) => ({ name: h.name, website: h.website || '', type: h.type || '' }));
 }
 
 function haversineKm(lat1, lon1, lat2, lon2) {
@@ -179,12 +172,12 @@ export default async (req) => {
 
   const district = detectDistrict(lastUserMsg);
 
-  const [overpassResults, firestoreResults] = await Promise.all([
+  const [overpassResults, supabaseResults] = await Promise.all([
     coords?.lat && coords?.lon
       ? fetchNearbyOverpass(coords.lat, coords.lon).catch((e) => { console.error('Overpass error:', e.message); return []; })
       : Promise.resolve(null),
-    district && db
-      ? fetchHospitals(district).catch((e) => { console.error('Firestore error:', e.message); return []; })
+    district && supabase
+      ? fetchHospitals(district).catch((e) => { console.error('Supabase error:', e.message); return []; })
       : Promise.resolve(null),
   ]);
 
@@ -197,8 +190,8 @@ export default async (req) => {
     const list = overpassResults.map((h) => `- ${h.name} (${h.distKm} km away): ${h.mapsLink}`).join('\n');
     systemPrompt += `\n\n## Top 5 nearby hospitals (OpenStreetMap, sorted by distance)\nList these with distance and Google Maps links. After listing, tell the user they can see more on the Live Map section of the homepage (5 km, 10 km, or 20 km radius options):\n${list}`;
 
-    if (firestoreResults?.length > 0) {
-      const deduped = firestoreResults.filter((h) => !overpassNames.has(h.name.toLowerCase()));
+    if (supabaseResults?.length > 0) {
+      const deduped = supabaseResults.filter((h) => !overpassNames.has(h.name.toLowerCase()));
       if (deduped.length > 0) {
         const top10 = deduped.slice(0, 10);
         const total = deduped.length;
@@ -210,9 +203,9 @@ export default async (req) => {
     }
   }
 
-  if (firestoreResults?.length > 0 && !(overpassResults?.length > 0)) {
-    const top10 = firestoreResults.slice(0, 10);
-    const total = firestoreResults.length;
+  if (supabaseResults?.length > 0 && !(overpassResults?.length > 0)) {
+    const top10 = supabaseResults.slice(0, 10);
+    const total = supabaseResults.length;
     const list = top10
       .map((h) => `- ${h.name}${h.website ? `: ${h.website}` : ''}`)
       .join('\n');

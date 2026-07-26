@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { collection, getDocs, doc, updateDoc } from "firebase/firestore";
-import { db } from "../Firebase";
+import { supabase } from "../supabase";
 import { useAuth } from "../AuthContext";
 
 function StatCard({ label, value, color }) {
@@ -16,37 +15,42 @@ function EditModal({ open, onClose, target, onSave, isSelf }) {
   const [role, setRole] = useState(target?.role || "user");
   const [active, setActive] = useState(!target?.blocked);
   const [saving, setSaving] = useState(false);
+  const [snapshot, setSnapshot] = useState({ target: {}, isSelf: false });
+  const [userToggled, setUserToggled] = useState(false);
 
   useEffect(() => {
     if (open) {
       setRole(target?.role || "user");
       setActive(!target?.blocked);
+      setSnapshot({ target, isSelf });
+      setUserToggled(false);
     }
-  }, [open, target]);
+  }, [open, target, isSelf]);
 
-  if (!open) return null;
+  const t = snapshot.target;
+  const self = snapshot.isSelf;
 
   const handleSave = async () => {
     setSaving(true);
-    const updates = target?.provider === "google.com" ? { role } : { role, blocked: !active };
-    await onSave(target.uid, updates);
+    const updates = t?.provider === "google" ? { role } : { role, blocked: !active };
+    await onSave(t.uid, updates);
     setSaving(false);
     onClose();
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="fixed inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative bg-white rounded-xl shadow-xl w-full max-w-md mx-4 p-6 z-10">
+    <div className={`fixed inset-0 z-50 flex items-center justify-center transition-opacity duration-200 ${open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`}>
+      <div className={`fixed inset-0 bg-black/40 transition-opacity duration-200 ${open ? "opacity-100" : "opacity-0"}`} onClick={onClose} />
+      <div className={`relative bg-white rounded-xl shadow-xl w-full max-w-md mx-4 p-6 z-10 transition-all duration-200 ${open ? "opacity-100 scale-100 translate-y-0" : "opacity-0 scale-95 translate-y-2"}`}>
         <h2 className="text-base font-semibold text-gray-800 mb-4">Edit User</h2>
         <div className="space-y-5">
           <div>
             <label className="text-xs font-medium text-gray-500 uppercase tracking-wide block mb-1">Name</label>
-            <p className="text-sm text-gray-800 font-medium">{target?.displayName || "—"}</p>
+            <p className="text-sm text-gray-800 font-medium">{t?.displayName || "—"}</p>
           </div>
           <div>
             <label className="text-xs font-medium text-gray-500 uppercase tracking-wide block mb-1">Email</label>
-            <p className="text-sm text-gray-800">{target?.email}</p>
+            <p className="text-sm text-gray-800">{t?.email}</p>
           </div>
 
           <div>
@@ -70,13 +74,13 @@ function EditModal({ open, onClose, target, onSave, isSelf }) {
             </div>
           </div>
 
-          {target?.provider !== "google.com" && (
+          {t?.provider !== "google" && (
             <div className="border-t border-gray-100 pt-4">
               <label className="text-xs font-medium text-gray-500 uppercase tracking-wide block mb-2">Account Status</label>
               <div
-                onClick={() => !isSelf && setActive((v) => !v)}
+                onClick={() => { if (!self) { setUserToggled(true); setActive((v) => !v); } }}
                 className={`flex items-center justify-between px-4 py-3 rounded-lg border cursor-pointer transition ${
-                  isSelf ? "opacity-50 cursor-not-allowed" : ""
+                  self ? "opacity-50 cursor-not-allowed" : ""
                 } ${active ? "bg-green-50 border-green-300" : "bg-red-50 border-red-300"}`}
               >
                 <div>
@@ -88,10 +92,10 @@ function EditModal({ open, onClose, target, onSave, isSelf }) {
                   </p>
                 </div>
                 <div className={`relative w-11 h-6 rounded-full transition-colors ${active ? "bg-green-500" : "bg-red-400"}`}>
-                  <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-all ${active ? "left-5" : "left-0.5"}`} />
+                  <div className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow ${userToggled ? "transition-all duration-200" : ""} ${active ? "translate-x-5" : "translate-x-0"}`} />
                 </div>
               </div>
-              {isSelf && <p className="text-xs text-gray-400 mt-1.5">Cannot change status for your own account.</p>}
+              {self && <p className="text-xs text-gray-400 mt-1.5">Cannot change status for your own account.</p>}
             </div>
           )}
         </div>
@@ -121,17 +125,16 @@ function Admin() {
   const [editTarget, setEditTarget] = useState(null);
 
   const fetchUsers = async () => {
-    if (!db) return;
     setLoading(true);
-    const snap = await getDocs(collection(db, "users"));
-    setUsers(snap.docs.map((d) => ({ uid: d.id, ...d.data() })));
+    const { data } = await supabase.rpc('admin_get_all_users');
+    setUsers((data || []).map((u) => ({ uid: u.id, ...u, displayName: u.display_name })));
     setLoading(false);
   };
 
   useEffect(() => { fetchUsers(); }, []);
 
   const handleSaveEdit = async (uid, updates) => {
-    await updateDoc(doc(db, "users", uid), updates);
+    await supabase.rpc('admin_update_user', { p_uid: uid, p_blocked: updates.blocked, p_role: updates.role });
     setUsers((prev) => prev.map((u) => u.uid === uid ? { ...u, ...updates } : u));
   };
 
@@ -208,7 +211,7 @@ function Admin() {
                       </td>
                       <td className={`px-6 py-4 ${u.blocked ? "text-gray-400" : "text-gray-600"}`}>{u.email}</td>
                       <td className="px-6 py-4 text-center">
-                        {u.provider === "google.com" ? (
+                        {u.provider === "google" ? (
                           <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wide bg-blue-50 text-blue-600 border border-blue-600">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" className="h-3 w-3 shrink-0">
                               <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.6 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34.5 6.5 29.5 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.2-.1-2.4-.4-3.5z" />
@@ -219,11 +222,11 @@ function Admin() {
                             Google Account
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wide bg-gray-100 text-gray-600 border border-gray-400">
+                          <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wide bg-purple-50 text-purple-600 border border-purple-400">
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
                             </svg>
-                            Email &amp; Password
+                            One-Click Login
                           </span>
                         )}
                       </td>
@@ -273,7 +276,7 @@ function Admin() {
       <EditModal
         open={!!editTarget}
         onClose={() => setEditTarget(null)}
-        target={editTarget}
+        target={editTarget || {}}
         isSelf={editTarget?.uid === user?.uid}
         onSave={handleSaveEdit}
       />

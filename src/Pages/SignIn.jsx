@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react';
 import PageTransition from '../Components/PageTransition';
 import { useNavigate, useLocation } from 'react-router';
 import { useAuth } from '../AuthContext';
+import { supabase } from '../supabase';
+
+const LOGIN_POLL_INTERVAL_MS = 3000;
 
 const MSG_NOT_FOUND = 'No account found for this email. Please sign up first.';
 const MSG_NOT_VERIFIED = 'Your email is not verified yet. Please check your inbox for the verification email.';
@@ -26,15 +29,43 @@ function SignIn() {
   const [resending, setResending] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
   const [resendError, setResendError] = useState('');
+  const [loginRequestId, setLoginRequestId] = useState(null);
 
   useEffect(() => {
     if (blockedError) { setError(blockedError); clearBlockedError(); }
   }, [blockedError]);
 
-  // Auto-redirect when Tab 3 verifies email and creates session (localStorage storage event)
+  // Auto-redirect once a session exists — either this tab verified the link itself
+  // (same-browser storage event), or the polling below redeemed it from another device.
   useEffect(() => {
     if (user) navigate('/');
   }, [user]);
+
+  // If the login link is opened on a different device, poll for it to hand back a
+  // one-time token this tab can redeem for its own session.
+  useEffect(() => {
+    if (!loginRequestId || user) return;
+
+    let cancelled = false;
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(`/.netlify/functions/check-login-request?rid=${loginRequestId}`);
+        const result = await res.json();
+        if (cancelled) return;
+
+        if (result.status === 'completed' && result.tokenHash) {
+          clearInterval(interval);
+          await supabase.auth.verifyOtp({ token_hash: result.tokenHash, type: 'email' });
+        } else if (result.status === 'expired' || result.status === 'not_found') {
+          clearInterval(interval);
+        }
+      } catch {
+        // transient network error — keep polling until the interval is cleared
+      }
+    }, LOGIN_POLL_INTERVAL_MS);
+
+    return () => { cancelled = true; clearInterval(interval); };
+  }, [loginRequestId, user]);
 
   const startResendCooldown = () => {
     setResendCooldown(60);
@@ -80,6 +111,7 @@ function SignIn() {
         setVerificationEmail(email.trim());
         setVerificationSource(tab === 'signup' ? 'signup' : 'login');
         setVerificationSent(true);
+        setLoginRequestId(result.requestId || null);
         startResendCooldown();
       } else {
         setError(result.error || 'Something went wrong. Please try again.');
@@ -104,6 +136,7 @@ function SignIn() {
       } else if (result.error === 'blocked') {
         setResendError(MSG_INACTIVE);
       } else if (result.success) {
+        setLoginRequestId(result.requestId || null);
         startResendCooldown();
       } else {
         setResendError(result.error || 'Could not resend. Please try again.');
@@ -115,7 +148,7 @@ function SignIn() {
   };
 
   const switchTab = (t) => {
-    setTab(t); setError(''); setEmail(''); setFullName('');
+    setTab(t); setError(''); setEmail(''); setFullName(''); setLoginRequestId(null);
     navigate(t === 'signup' ? '/signup' : '/signin', { replace: true });
   };
 

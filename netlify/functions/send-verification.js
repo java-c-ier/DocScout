@@ -139,11 +139,21 @@ export default async (req) => {
     }
     if (!otpToken) return Response.json({ error: 'failed_to_generate_link' }, { status: 500 });
 
-    const verificationLink = `${baseUrl}/verify-login?token=${otpToken}&email=${encodeURIComponent(email)}`;
+    // Track this login attempt so the device that requested the link (which may not be
+    // the device the link is opened on) can pick up its own session once it's confirmed.
+    await supabase.from('login_requests').delete().lt('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
+    const { data: requestRow, error: requestErr } = await supabase
+      .from('login_requests')
+      .insert({ email })
+      .select('id')
+      .single();
+    if (requestErr) return Response.json({ error: requestErr.message }, { status: 500 });
+
+    const verificationLink = `${baseUrl}/verify-login?token=${otpToken}&email=${encodeURIComponent(email)}&rid=${requestRow.id}`;
     const displayName = userData.display_name || email.split('@')[0];
     const html = fill(loginTemplate, { name: displayName, verificationLink });
     await sendEmail(email, 'Your DocScout sign-in link', html);
-    return Response.json({ success: true });
+    return Response.json({ success: true, requestId: requestRow.id });
   }
 
   return Response.json({ error: 'invalid_source' }, { status: 400 });

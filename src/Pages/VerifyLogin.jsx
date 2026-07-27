@@ -7,23 +7,25 @@ function VerifyLogin() {
   const [searchParams] = useSearchParams();
   const token = searchParams.get("token");
   const email = searchParams.get("email");
+  const rid = searchParams.get("rid");
 
   const [status, setStatus] = useState(token && email ? "ready" : "invalid");
 
   const handleVerify = () => {
     setStatus("loading");
 
-    supabase.auth.verifyOtp({ token_hash: token, type: 'email' })
-      .then(({ error }) => {
-        if (error) {
-          if (error.message?.toLowerCase().includes('expired') || error.message?.toLowerCase().includes('invalid')) {
-            setStatus("expired");
-          } else {
-            setStatus("invalid");
-          }
-        } else {
-          setStatus("success");
-        }
+    fetch('/.netlify/functions/verify-login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token, email, rid }),
+    })
+      .then((res) => res.json())
+      .then(async (result) => {
+        if (result.error === 'expired') { setStatus("expired"); return; }
+        if (result.error || !result.session) { setStatus("invalid"); return; }
+
+        const { error } = await supabase.auth.setSession(result.session);
+        setStatus(error ? "invalid" : "success");
       })
       .catch(() => setStatus("invalid"));
   };
@@ -80,7 +82,9 @@ function VerifyLogin() {
             <h2 className="text-2xl font-bold text-gray-900 mb-2">Signed in!</h2>
             {email && <p className="text-[#1a8efd] font-semibold text-sm mb-3">{email}</p>}
             <p className="text-gray-500 text-sm">
-              You're now signed in. You can close this window — the other tab is ready.
+              You're signed in on this device. If you started sign-in on another device or
+              browser tab, it should sign in automatically within a few seconds — you can
+              close this window.
             </p>
           </div>
         </section>

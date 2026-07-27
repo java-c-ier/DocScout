@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router";
 import { supabase } from "../supabase";
 import { useAuth } from "../AuthContext";
@@ -15,12 +15,8 @@ export function Nav() {
   const isAuthPage = location.pathname === "/signin" || location.pathname === "/signup";
   const isProfilePage = location.pathname === "/profile";
   const isAdminPage = location.pathname === "/admin";
-
-  useEffect(() => {
-    const handleProfileUpdated = () => {};
-    window.addEventListener("profileUpdated", handleProfileUpdated);
-    return () => window.removeEventListener("profileUpdated", handleProfileUpdated);
-  }, []);
+  const isUploadPage = location.pathname === "/uploadHospitals" || location.pathname === "/uploadDoctors";
+  const hideNavLinks = isProfilePage || isAdminPage || isUploadPage;
 
   const handleSignOut = () => {
     document.body.style.transition = "opacity 0.25s ease";
@@ -97,7 +93,7 @@ export function Nav() {
           <span className="mr-16 cursor-pointer py-1.5 lg:font-bold font-black text-[135%]">
             DocScout
           </span>
-          {!isProfilePage && !isAdminPage && <div className="mr-20 hidden lg:block">{navLinks}</div>}
+          {!hideNavLinks && <div className="mr-20 hidden lg:block">{navLinks}</div>}
           <div className="flex items-center gap-x-4">
             {!authReady ? null : user ? (
               <div className="relative hidden lg:block" ref={profileDropdownRef}>
@@ -161,6 +157,28 @@ export function Nav() {
                           Admin Panel
                         </button>
                       )}
+                      {role === "admin" && (
+                        <button
+                          onClick={() => { setProfileDropdown(false); navigate("/uploadHospitals"); }}
+                          className="w-full flex items-center gap-3 px-5 py-2.5 text-base text-gray-700 hover:bg-gray-50 transition"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 16.5V9.75m0 0l-3 3m3-3l3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z" />
+                          </svg>
+                          Upload Hospitals
+                        </button>
+                      )}
+                      {role === "admin" && (
+                        <button
+                          onClick={() => { setProfileDropdown(false); navigate("/uploadDoctors"); }}
+                          className="w-full flex items-center gap-3 px-5 py-2.5 text-base text-gray-700 hover:bg-gray-50 transition"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 16.5V9.75m0 0l-3 3m3-3l3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z" />
+                          </svg>
+                          Upload Doctors
+                        </button>
+                      )}
                       <div className="mx-4 border-t border-gray-100 my-1" />
                       <button
                         onClick={() => { setProfileDropdown(false); handleSignOut(); }}
@@ -183,7 +201,7 @@ export function Nav() {
             ) : null}
           </div>
           <button
-            className={`ml-auto h-6 w-6 text-gray-700 lg:hidden ${isProfilePage || isAdminPage ? "hidden" : ""}`}
+            className={`ml-auto h-6 w-6 text-gray-700 lg:hidden ${hideNavLinks ? "hidden" : ""}`}
             onClick={() => setOpenNav(!openNav)}
           >
             {openNav ? (
@@ -213,6 +231,27 @@ export function Nav() {
                     My Profile
                   </button>
                 </NavLink>
+                {role === "admin" && (
+                  <NavLink to="/admin" className="w-full" onClick={closeNav}>
+                    <button className="w-full bg-blue-50 text-blue-600 border border-blue-200 py-2 rounded flex items-center justify-center h-10 font-medium text-sm">
+                      Admin Panel
+                    </button>
+                  </NavLink>
+                )}
+                {role === "admin" && (
+                  <NavLink to="/uploadHospitals" className="w-full" onClick={closeNav}>
+                    <button className="w-full bg-blue-50 text-blue-600 border border-blue-200 py-2 rounded flex items-center justify-center h-10 font-medium text-sm">
+                      Upload Hospitals
+                    </button>
+                  </NavLink>
+                )}
+                {role === "admin" && (
+                  <NavLink to="/uploadDoctors" className="w-full" onClick={closeNav}>
+                    <button className="w-full bg-blue-50 text-blue-600 border border-blue-200 py-2 rounded flex items-center justify-center h-10 font-medium text-sm">
+                      Upload Doctors
+                    </button>
+                  </NavLink>
+                )}
                 <button
                   className="sign-out-mobile w-full bg-red-500 text-white py-2 rounded flex items-center justify-center h-10"
                   onClick={handleSignOut}

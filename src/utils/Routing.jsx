@@ -1,15 +1,14 @@
-import React, { Suspense, lazy } from "react";
+import { Suspense, lazy } from "react";
 import { Route, Routes, useLocation } from "react-router";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Home from "../Pages/Home";
 import Nav from "../Components/Nav";
-import CSVUpload from "../Components/CSVUpload";
+import CSVUploadHospitals from "../Components/CSVUploadHospitals";
 import CSVUploadDoctors from "../Components/CSVUploadDoctors";
 import ProtectedRoute from "../Components/ProtectedRoute";
 
 const SignIn = lazy(() => import("../Pages/SignIn"));
-const SignUp = lazy(() => import("../Pages/SignUp"));
 const Profile = lazy(() => import("../Pages/Profile"));
 const Admin = lazy(() => import("../Pages/Admin"));
 const VerifyEmail = lazy(() => import("../Pages/VerifyEmail"));
@@ -26,8 +25,16 @@ function Routing() {
       <Suspense fallback={null}>
         <Routes>
           <Route path="/" element={<Home />} />
-          <Route path="/upload" element={<CSVUpload />} />
-          <Route path="/uploadDoctors" element={<CSVUploadDoctors />} />
+          <Route path="/uploadHospitals" element={
+            <ProtectedRoute requiredRole="admin">
+              <CSVUploadHospitals />
+            </ProtectedRoute>
+          } />
+          <Route path="/uploadDoctors" element={
+            <ProtectedRoute requiredRole="admin">
+              <CSVUploadDoctors />
+            </ProtectedRoute>
+          } />
           <Route path="/signin" element={<SignIn />} />
           <Route path="/signup" element={<SignIn />} />
           <Route path="/verify-email" element={<VerifyEmail />} />

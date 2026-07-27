@@ -71,7 +71,7 @@ export default async (req) => {
           try { redeemToken = new URL(actionLink).searchParams.get('token'); } catch { /* ignore */ }
         }
         if (!redeemToken) {
-          console.error('verify-login: no token in generated action_link', rid, actionLink);
+          console.error('verify-login: no token found in generated action_link', rid, !!actionLink);
         } else {
           const { error: updateErr } = await supabaseAdmin
             .from('login_requests')

@@ -1,11 +1,20 @@
 import { createClient } from '@supabase/supabase-js';
 
 const rawKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
-console.error('verify-login: key prefix', rawKey.slice(0, 12), 'len', rawKey.length);
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
   rawKey
+);
+
+// Separate client for login_requests table access. supabase.auth.verifyOtp() below
+// sets a user session on `supabase`, which makes supabase-js send that user's access
+// token (role: authenticated) instead of the service-role key on subsequent .from()
+// calls — this second client stays untouched so those requests keep using service_role.
+const supabaseAdmin = createClient(
+  process.env.SUPABASE_URL,
+  rawKey,
+  { auth: { persistSession: false, autoRefreshToken: false } }
 );
 
 const LOGIN_REQUEST_TTL_MS = 60 * 60 * 1000;
@@ -34,10 +43,7 @@ export default async (req) => {
   // Best-effort: let the device that originally requested this link (if different
   // from this one) pick up its own session via check-login-request polling.
   if (rid) {
-    const { data: whoami, error: whoamiErr } = await supabase.rpc('whoami');
-    console.error('verify-login: acting as', whoami, whoamiErr?.message);
-
-    const { data: requestRow, error: rowErr } = await supabase
+    const { data: requestRow, error: rowErr } = await supabaseAdmin
       .from('login_requests')
       .select('id, email, status, created_at')
       .eq('id', rid)
@@ -56,7 +62,7 @@ export default async (req) => {
       } else if (!isFresh) {
         console.error('verify-login: row stale', rid, requestRow.created_at);
       } else {
-        const { data: linkData, error: genErr } = await supabase.auth.admin.generateLink({ type: 'magiclink', email });
+        const { data: linkData, error: genErr } = await supabaseAdmin.auth.admin.generateLink({ type: 'magiclink', email });
         if (genErr) console.error('verify-login: generateLink failed', rid, genErr.message);
 
         let redeemToken = null;
@@ -67,7 +73,7 @@ export default async (req) => {
         if (!redeemToken) {
           console.error('verify-login: no token in generated action_link', rid, actionLink);
         } else {
-          const { error: updateErr } = await supabase
+          const { error: updateErr } = await supabaseAdmin
             .from('login_requests')
             .update({ status: 'completed', redeem_token_hash: redeemToken })
             .eq('id', rid);

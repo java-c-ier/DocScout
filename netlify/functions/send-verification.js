@@ -6,9 +6,12 @@ import { createClient } from '@supabase/supabase-js';
 
 const __funcDir = dirname(fileURLToPath(import.meta.url));
 
+const rawKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+console.error('send-verification: key prefix', rawKey.slice(0, 12), 'len', rawKey.length);
+
 const supabase = createClient(
   process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
+  rawKey
 );
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY;

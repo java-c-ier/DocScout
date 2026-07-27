@@ -1,8 +1,11 @@
 import { createClient } from '@supabase/supabase-js';
 
+const rawKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+console.error('verify-login: key prefix', rawKey.slice(0, 12), 'len', rawKey.length);
+
 const supabase = createClient(
   process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
+  rawKey
 );
 
 const LOGIN_REQUEST_TTL_MS = 60 * 60 * 1000;

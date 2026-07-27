@@ -4,4 +4,5 @@
 /@id/* /@id/:splat 200
 /@fs/* /@fs/:splat 200
 /node_modules/* /node_modules/:splat 200
+/backend/* https://lbrodkthidzjktrmltyq.supabase.co/:splat 200!
 /* /index.html 200

@@ -18,6 +18,18 @@ function Modal({ open, onClose, title, children, footer, wide }) {
     }
   }, [open]);
 
+  React.useEffect(() => {
+    if (!mounted) return;
+    const originalOverflow = document.body.style.overflow;
+    const originalOverscroll = document.documentElement.style.overscrollBehaviorX;
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.overscrollBehaviorX = "none";
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      document.documentElement.style.overscrollBehaviorX = originalOverscroll;
+    };
+  }, [mounted]);
+
   if (!mounted) return null;
 
   return (
@@ -111,6 +123,35 @@ function IconBtn({ onClick, title, children, tooltipAlign = "center" }) {
   );
 }
 
+function DeptAccordion({ name, expanded, onToggle, children }) {
+  return (
+    <div className="border border-gray-200 rounded-lg overflow-hidden">
+      <button
+        onClick={onToggle}
+        className="w-full px-4 py-2.5 text-left bg-blue-50 text-sm font-semibold text-blue-800 hover:bg-blue-100 transition flex items-center justify-between"
+      >
+        {name.split('_').filter(Boolean).join(' ')}
+        <svg viewBox="0 0 20 20" fill="currentColor" className={`w-4 h-4 transition-transform duration-300 ${expanded ? 'rotate-180' : ''}`}>
+          <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clipRule="evenodd" />
+        </svg>
+      </button>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateRows: expanded ? '1fr' : '0fr',
+          transition: 'grid-template-rows 300ms ease-in-out',
+        }}
+      >
+        <div style={{ overflow: 'hidden', minHeight: 0 }}>
+          <div className="p-4 bg-white text-sm text-gray-700 max-h-[300px] overflow-y-auto space-y-4">
+            {children}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function RowsPerPageDropdown({ value, options, onChange }) {
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -190,7 +231,7 @@ const Hospitals = ({ hospitals, hasSearched, searchedDistrict, userCoords, sorti
   const tableWrapperRef = useRef(null);
   const [scrollMaxHeight, setScrollMaxHeight] = useState(null);
 
-  const [sortCol, setSortCol] = useState(null);
+  const [sortCol, setSortCol] = useState("name");
   const [sortDir, setSortDir] = useState("asc");
 
   const [openReviewDialog, setOpenReviewDialog] = useState(false);
@@ -279,8 +320,6 @@ const Hospitals = ({ hospitals, hasSearched, searchedDistrict, userCoords, sorti
       return;
     }
     try {
-      const district = selectedHospital.district;
-      const name = selectedHospital.Name;
       const hid = selectedHospital.id;
       await Promise.all([
         addReview(hid, "Cleanliness_and_Hygiene", cleanliness),
@@ -302,32 +341,41 @@ const Hospitals = ({ hospitals, hasSearched, searchedDistrict, userCoords, sorti
   };
 
   const handleOpenDeptDialog = (hospital) => {
-    const names = hospital.departments || [];
-    const hospId = hospital.Name.replace(/\s+/g, "_");
+    const hospId = hospital.id;
     const cached = deptDoctorsCacheRef.current[hospId];
 
     setDeptDialogHospital(hospital);
     setDeptExpanded({});
-    setDeptNames(names);
-    setDeptDoctors(cached || {});
-    setDeptDoctorsReady(!!cached);
     setOpenDeptDialog(true);
 
-    if (cached || names.length === 0) return;
+    if (cached) {
+      setDeptNames(Object.keys(cached));
+      setDeptDoctors(cached);
+      setDeptDoctorsReady(true);
+      return;
+    }
+
+    setDeptNames([]);
+    setDeptDoctors({});
+    setDeptDoctorsReady(false);
 
     (async () => {
+      const { data: depts } = await supabase
+        .from('departments')
+        .select('id, name, doctors(*)')
+        .eq('hospital_id', hospId)
+        .order('name');
+
+      if (!depts || depts.length === 0) {
+        setDeptDoctorsReady(true);
+        return;
+      }
+
       const fetched = {};
-      await Promise.all(
-        names.map(async (dept) => {
-          const { data } = await supabase
-            .from('doctors')
-            .select('*')
-            .eq('hospital_id', hospital.id)
-            .eq('department', dept);
-          fetched[dept] = data || [];
-        })
-      );
+      depts.forEach((dept) => { fetched[dept.name] = dept.doctors || []; });
+
       deptDoctorsCacheRef.current[hospId] = fetched;
+      setDeptNames(depts.map((d) => d.name));
       setDeptDoctors(fetched);
       setDeptDoctorsReady(true);
     })();
@@ -336,9 +384,7 @@ const Hospitals = ({ hospitals, hasSearched, searchedDistrict, userCoords, sorti
     setOpenDeptDialog(false);
   };
   const toggleDeptAccordion = (deptName) =>
-    setDeptExpanded((prev) => ({ ...prev, [deptName]: !prev[deptName] }));
-  const formatDeptName = (name) => name.split("_").filter(Boolean).join(" ");
-
+    setDeptExpanded((prev) => (prev[deptName] ? {} : { [deptName]: true }));
   const showDistance = !!userCoords;
   const formatDistance = (d) => {
     if (d === undefined || d === null || d === Infinity) return "—";
@@ -395,10 +441,10 @@ const Hospitals = ({ hospitals, hasSearched, searchedDistrict, userCoords, sorti
           <table className="min-w-full table-fixed divide-y divide-gray-100">
             <thead className={`bg-gray-50 ${needsScroll ? "sticky top-0 z-10" : ""}`}>
               <tr>
-                <HeadCell id="Name"    label="Name"     sortable className="w-80 pl-5" />
-                <HeadCell id="Type"    label="Type"     sortable className="w-44" />
-                <HeadCell id="Contact" label="Contact"  className="w-28" />
-                <HeadCell id="Rating"  label="Rating"   sortable className="w-20" />
+                <HeadCell id="name"    label="Name"     sortable className="w-80 pl-5" />
+                <HeadCell id="type"    label="Type"     sortable className="w-44" />
+                <HeadCell id="contact" label="Contact"  className="w-28" />
+                <HeadCell id="rating"  label="Rating"   sortable className="w-20" />
                 {showDistance && <HeadCell id="distance" label="Distance" sortable className="w-24" />}
                 <HeadCell id="website" label="Website"  align="center" className="w-24" />
                 <HeadCell id="map"     label="Google Map Link" align="center" className="w-32" />
@@ -411,9 +457,9 @@ const Hospitals = ({ hospitals, hasSearched, searchedDistrict, userCoords, sorti
                   {/* Name + avatar */}
                   <td className="px-3 py-3 pl-5">
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <HospitalAvatar name={hospital.Name} />
+                      <HospitalAvatar name={hospital.name} />
                       <div className="min-w-0">
-                        <p className="text-sm font-medium text-gray-900 truncate">{hospital.Name || "N/A"}</p>
+                        <p className="text-sm font-medium text-gray-900 truncate">{hospital.name || "N/A"}</p>
                       </div>
                       <IconBtn onClick={() => handleOpenDeptDialog(hospital)} title="See Hospital Details">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
@@ -426,17 +472,17 @@ const Hospitals = ({ hospitals, hasSearched, searchedDistrict, userCoords, sorti
 
                   {/* Type badge */}
                   <td className="px-3 py-3 overflow-hidden">
-                    <TypeBadge type={hospital.Type} />
+                    <TypeBadge type={hospital.type} />
                   </td>
 
                   {/* Contact */}
                   <td className="px-3 py-3 text-sm text-gray-600 truncate">
-                    {hospital.Contact || "—"}
+                    {hospital.contact || "—"}
                   </td>
 
                   {/* Rating */}
                   <td className="px-3 py-3 whitespace-nowrap overflow-hidden">
-                    <StarRating value={hospital.Rating} />
+                    <StarRating value={hospital.rating} />
                   </td>
 
                   {/* Distance */}
@@ -450,8 +496,8 @@ const Hospitals = ({ hospitals, hasSearched, searchedDistrict, userCoords, sorti
 
                   {/* Website */}
                   <td className="px-3 py-3 whitespace-nowrap overflow-hidden text-center">
-                    {hospital.Website ? (
-                      <a href={hospital.Website} target="_blank" rel="noopener noreferrer"
+                    {hospital.website ? (
+                      <a href={hospital.website} target="_blank" rel="noopener noreferrer"
                         className="text-xs font-medium text-blue-600 hover:text-blue-800 hover:underline">
                         Visit
                       </a>
@@ -460,8 +506,8 @@ const Hospitals = ({ hospitals, hasSearched, searchedDistrict, userCoords, sorti
 
                   {/* Google Map Link */}
                   <td className="px-3 py-3 whitespace-nowrap overflow-hidden text-center">
-                    {hospital["Google Map Link"] ? (
-                      <a href={hospital["Google Map Link"]} target="_blank" rel="noopener noreferrer"
+                    {hospital.google_map_link ? (
+                      <a href={hospital.google_map_link} target="_blank" rel="noopener noreferrer"
                         className="text-xs font-medium text-blue-600 hover:text-blue-800 hover:underline">
                         View Map
                       </a>
@@ -556,7 +602,7 @@ const Hospitals = ({ hospitals, hasSearched, searchedDistrict, userCoords, sorti
       <Modal
         open={openDeptDialog}
         onClose={handleCloseDeptDialog}
-        title={`Departments — ${deptDialogHospital?.Name || ""}`}
+        title={`Departments — ${deptDialogHospital?.name || ""}`}
         footer={
           <button onClick={handleCloseDeptDialog} className="px-4 py-2 text-sm rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition">
             Close
@@ -566,34 +612,26 @@ const Hospitals = ({ hospitals, hasSearched, searchedDistrict, userCoords, sorti
         <div className="space-y-3">
           {deptNames.length > 0 ? (
             deptNames.map((deptName) => (
-              <div key={deptName} className="border border-gray-200 rounded-lg overflow-hidden">
-                <button
-                  onClick={() => toggleDeptAccordion(deptName)}
-                  className="w-full px-4 py-2.5 text-left bg-blue-50 text-sm font-semibold text-blue-800 hover:bg-blue-100 transition flex items-center justify-between"
-                >
-                  {formatDeptName(deptName)}
-                  <svg viewBox="0 0 20 20" fill="currentColor" className={`w-4 h-4 transition-transform ${deptExpanded[deptName] ? "rotate-180" : ""}`}>
-                    <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clipRule="evenodd" />
-                  </svg>
-                </button>
-                <div className={`overflow-hidden transition-[max-height] duration-300 ease-in-out ${deptExpanded[deptName] ? "max-h-96" : "max-h-0"}`}>
-                  <div className="p-4 bg-white text-sm text-gray-700 max-h-[300px] overflow-y-auto space-y-4">
-                    {(deptDoctors[deptName] || []).length > 0 ? (
-                      deptDoctors[deptName].map((doc, idx) => (
-                        <div key={idx} className="pl-2 border-l-2 border-blue-200">
-                          <p className="font-semibold text-gray-900">{doc.Name}</p>
-                          <p className="text-gray-500">{doc.Qualification} · {doc.Specialization}</p>
-                          <p className="text-gray-500">Exp: {doc.Experience} · {doc.Timing}</p>
-                        </div>
-                      ))
-                    ) : deptDoctorsReady ? (
-                      <p className="text-center text-gray-400">No doctors in this department.</p>
-                    ) : (
-                      <p className="text-center text-gray-400">Loading doctors…</p>
-                    )}
-                  </div>
-                </div>
-              </div>
+              <DeptAccordion
+                key={deptName}
+                name={deptName}
+                expanded={!!deptExpanded[deptName]}
+                onToggle={() => toggleDeptAccordion(deptName)}
+              >
+                {(deptDoctors[deptName] || []).length > 0 ? (
+                  deptDoctors[deptName].map((doc, idx) => (
+                    <div key={idx} className="pl-2 border-l-2 border-blue-200 pb-3 last:pb-0">
+                      <p className="font-semibold text-gray-900">{doc.name}</p>
+                      <p className="text-gray-500">{doc.qualification} · {doc.specialization}</p>
+                      <p className="text-gray-500">Exp: {doc.experience} · {doc.timing}</p>
+                    </div>
+                  ))
+                ) : deptDoctorsReady ? (
+                  <p className="text-center text-gray-400">No doctors in this department.</p>
+                ) : (
+                  <p className="text-center text-gray-400">Loading doctors…</p>
+                )}
+              </DeptAccordion>
             ))
           ) : (
             <p className="text-center text-gray-400 py-4">No department data available.</p>
@@ -638,7 +676,7 @@ const Hospitals = ({ hospitals, hasSearched, searchedDistrict, userCoords, sorti
       <Modal
         open={openSentimentDialog}
         onClose={() => setOpenSentimentDialog(false)}
-        title={`Reviews — ${selectedHospital?.Name || ""}`}
+        title={`Reviews — ${selectedHospital?.name || ""}`}
         wide
         footer={
           <button onClick={() => setOpenSentimentDialog(false)} className="px-4 py-2 text-sm rounded-lg text-gray-600 hover:bg-gray-100 transition">Close</button>

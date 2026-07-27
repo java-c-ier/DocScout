@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import Doctor from "../assets/Doctor.png";
 import "../Styles/Hero.css";
 import { TbSearch } from "react-icons/tb";
@@ -111,10 +111,10 @@ function Hero({ onRestoreComplete }) {
     }
   };
 
-  const scrollToHospitals = () => {
+  const scrollToHospitals = (behavior = "smooth") => {
     if (hospitalListRef.current) {
       const yPos = hospitalListRef.current.getBoundingClientRect().top + window.scrollY - 70;
-      window.scrollTo({ top: yPos, behavior: "smooth" });
+      window.scrollTo({ top: yPos, behavior });
     }
   };
 

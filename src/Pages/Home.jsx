@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import Hero from './../Components/Hero';
 import NearbyMap from './../Components/NearbyMap';
 import About from './About';
@@ -7,6 +7,12 @@ import Contact from './Contact';
 import { Footer } from './Footer';
 import DoctorImg from '../assets/Doctor.png';
 import DoctorsImg from '../assets/Doctors.png';
+
+const SCROLL_POS_KEY = "docscout_scroll_pos";
+
+if (typeof window !== 'undefined' && 'scrollRestoration' in window.history) {
+  window.history.scrollRestoration = 'manual';
+}
 
 function Home() {
   const [imagesLoaded, setImagesLoaded] = useState(false);
@@ -28,6 +34,34 @@ function Home() {
       }
     });
   }, []);
+
+  useEffect(() => {
+    let ticking = false;
+    const handleScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        sessionStorage.setItem(SCROLL_POS_KEY, String(window.scrollY));
+        ticking = false;
+      });
+    };
+    const flush = () => sessionStorage.setItem(SCROLL_POS_KEY, String(window.scrollY));
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    window.addEventListener("pagehide", flush);
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("pagehide", flush);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!loaded) return;
+    const savedScrollY = sessionStorage.getItem(SCROLL_POS_KEY);
+    if (savedScrollY === null) return;
+    requestAnimationFrame(() => {
+      window.scrollTo({ top: parseInt(savedScrollY, 10), behavior: "instant" });
+    });
+  }, [loaded]);
 
   return (
     <>

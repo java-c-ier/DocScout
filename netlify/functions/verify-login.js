@@ -31,25 +31,42 @@ export default async (req) => {
   // Best-effort: let the device that originally requested this link (if different
   // from this one) pick up its own session via check-login-request polling.
   if (rid) {
-    const { data: requestRow } = await supabase
+    const { data: requestRow, error: rowErr } = await supabase
       .from('login_requests')
       .select('id, email, status, created_at')
       .eq('id', rid)
       .single();
 
-    const isFresh = requestRow && Date.now() - new Date(requestRow.created_at).getTime() < LOGIN_REQUEST_TTL_MS;
-    if (requestRow && requestRow.status === 'pending' && requestRow.email === email && isFresh) {
-      const { data: linkData } = await supabase.auth.admin.generateLink({ type: 'magiclink', email });
-      let redeemToken = null;
-      const actionLink = linkData?.properties?.action_link;
-      if (actionLink) {
-        try { redeemToken = new URL(actionLink).searchParams.get('token'); } catch { /* ignore */ }
-      }
-      if (redeemToken) {
-        await supabase
-          .from('login_requests')
-          .update({ status: 'completed', redeem_token_hash: redeemToken })
-          .eq('id', rid);
+    if (rowErr) {
+      console.error('verify-login: login_requests lookup failed', rid, rowErr.message);
+    } else if (!requestRow) {
+      console.error('verify-login: no login_requests row for rid', rid);
+    } else {
+      const isFresh = Date.now() - new Date(requestRow.created_at).getTime() < LOGIN_REQUEST_TTL_MS;
+      if (requestRow.status !== 'pending') {
+        console.error('verify-login: row not pending', rid, requestRow.status);
+      } else if (requestRow.email !== email) {
+        console.error('verify-login: email mismatch', rid, requestRow.email, email);
+      } else if (!isFresh) {
+        console.error('verify-login: row stale', rid, requestRow.created_at);
+      } else {
+        const { data: linkData, error: genErr } = await supabase.auth.admin.generateLink({ type: 'magiclink', email });
+        if (genErr) console.error('verify-login: generateLink failed', rid, genErr.message);
+
+        let redeemToken = null;
+        const actionLink = linkData?.properties?.action_link;
+        if (actionLink) {
+          try { redeemToken = new URL(actionLink).searchParams.get('token'); } catch { /* ignore */ }
+        }
+        if (!redeemToken) {
+          console.error('verify-login: no token in generated action_link', rid, actionLink);
+        } else {
+          const { error: updateErr } = await supabase
+            .from('login_requests')
+            .update({ status: 'completed', redeem_token_hash: redeemToken })
+            .eq('id', rid);
+          if (updateErr) console.error('verify-login: row update failed', rid, updateErr.message);
+        }
       }
     }
   }

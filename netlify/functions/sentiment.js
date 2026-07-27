@@ -37,11 +37,18 @@ export default async (req) => {
   let body;
   try { body = await req.json(); } catch { return new Response('Invalid JSON', { status: 400 }); }
 
+  const MAX_ASPECTS = 10;
+  const MAX_REVIEWS_PER_ASPECT = 50;
+  const MAX_REVIEW_LEN = 2000;
+
   const categories = body.reviews || {};
   const output = {};
 
-  for (const [aspect, reviewsList] of Object.entries(categories)) {
-    if (!Array.isArray(reviewsList) || reviewsList.length === 0) {
+  for (const [aspect, rawReviewsList] of Object.entries(categories).slice(0, MAX_ASPECTS)) {
+    const reviewsList = Array.isArray(rawReviewsList)
+      ? rawReviewsList.slice(0, MAX_REVIEWS_PER_ASPECT).map((t) => String(t).slice(0, MAX_REVIEW_LEN))
+      : [];
+    if (reviewsList.length === 0) {
       output[aspect] = { reviews: [], average_rating: 0, distribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 } };
       continue;
     }

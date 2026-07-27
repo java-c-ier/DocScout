@@ -164,8 +164,19 @@ export default async (req) => {
   let body;
   try { body = await req.json(); } catch { return new Response('Invalid JSON', { status: 400 }); }
 
-  const messages = body.messages || [];
-  const coords = body.coords || null;
+  const MAX_MESSAGES = 30;
+  const MAX_CONTENT_LEN = 4000;
+
+  const rawMessages = Array.isArray(body.messages) ? body.messages : [];
+  const messages = rawMessages
+    .slice(-MAX_MESSAGES)
+    .map((m) => ({ ...m, content: typeof m.content === 'string' ? m.content.slice(0, MAX_CONTENT_LEN) : '' }));
+
+  const rawCoords = body.coords || null;
+  const coords = rawCoords && Number.isFinite(rawCoords.lat) && Number.isFinite(rawCoords.lon)
+    && rawCoords.lat >= -90 && rawCoords.lat <= 90 && rawCoords.lon >= -180 && rawCoords.lon <= 180
+    ? rawCoords
+    : null;
   const lastUserMsg = [...messages].reverse().find((m) => m.role === 'user')?.content || '';
 
   let systemPrompt = SYSTEM_PROMPT;
@@ -246,7 +257,6 @@ export default async (req) => {
       const reply = data.candidates?.[0]?.content?.parts?.[0]?.text;
       if (!reply) { console.warn(`${model} returned empty reply`); continue; }
 
-      console.log(`Served by ${model}`);
       return Response.json({ reply });
     } catch (err) {
       console.error(`${model} network error:`, err.message);

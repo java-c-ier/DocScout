@@ -1,4 +1,3 @@
-import React from "react";
 import Doctor from "../assets/Doctors.png";
 import "../Styles/About.css";
 import SolutionStep from "../Components/SolutionStep";
@@ -33,11 +32,6 @@ function About() {
           title="Get its location"
           description="Get the link to your hospital's location from Google Maps and get its route from your location when redirected to Google Maps."
         />
-
-        {/* <SolutionStep
-          title="Get Your Solutions"
-          description="Our experienced doctors and specialists are here to provide expert advice and personalized treatment plans, helping you achieve your best possible health."
-        /> */}
       </div>
     </div>
   );

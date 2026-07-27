@@ -13,7 +13,7 @@ const supabase = createClient(
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 const FROM_NOREPLY = 'DocScout <doc-scout@jimut.in>';
-const ADMIN_EMAIL = 'jimutksahoo99@gmail.com';
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'jimutksahoo99@gmail.com';
 
 const signupTemplate = readFileSync(join(__funcDir, 'templates/email-signup-verify.html'), 'utf8');
 const loginTemplate = readFileSync(join(__funcDir, 'templates/email-login-link.html'), 'utf8');
@@ -46,7 +46,28 @@ export default async (req) => {
   // ── SIGNUP ────────────────────────────────────────────────────────────────
   if (source === 'signup') {
     const { data: existing } = await supabase.rpc('get_user_for_login', { p_email: email });
-    if (existing) return Response.json({ error: 'already_registered' });
+    if (existing) {
+      if (existing.email_verified) return Response.json({ error: 'already_registered' });
+
+      // Account exists but never verified — resend a fresh verification link instead of dead-ending.
+      const uid = existing.id;
+      const token = crypto.randomBytes(32).toString('hex');
+      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+      const { error: tokenErr } = await supabase.rpc('create_email_verification', {
+        p_token: token,
+        p_uid: uid,
+        p_email: email,
+        p_source: 'signup',
+        p_expires_at: expiresAt,
+      });
+      if (tokenErr) return Response.json({ error: tokenErr.message }, { status: 500 });
+
+      const verificationLink = `${baseUrl}/verify-email?token=${token}`;
+      const displayName = existing.display_name || name || email.split('@')[0];
+      const html = fill(signupTemplate, { name: displayName, verificationLink });
+      await sendEmail(email, 'Welcome to DocScout — Verify your email', html);
+      return Response.json({ success: true });
+    }
 
     const { data: authData, error: createErr } = await supabase.auth.admin.createUser({
       email,

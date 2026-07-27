@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import favicon from '../assets/medical-symbol.png';
 
 const WELCOME_TEXT = "Hi! I'm Scouty, your DocScout assistant. Ask me anything about hospitals in Odisha, symptoms, specialists, or how to use DocScout. 🏥";

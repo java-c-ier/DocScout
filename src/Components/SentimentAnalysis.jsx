@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { getReviewsByAspect } from "../supabase";
 import { Star, StarHalf, StarOff } from "lucide-react";
 
@@ -134,7 +134,7 @@ const SentimentAnalysis = ({ hospital, searchedDistrict }) => {
         if (!res.ok) throw new Error("Sentiment API error");
         const json = await res.json();
         if (!cancelled) setAnalysisData(json);
-      } catch (e) {
+      } catch {
         if (!cancelled) setError("Failed to load analysis. Please try again.");
       } finally {
         if (!cancelled) setLoading(false);

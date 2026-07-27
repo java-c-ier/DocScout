@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useState } from "react";
 import { useSearchParams } from "react-router";
 import PageTransition from "../Components/PageTransition";
 import { supabase } from "../supabase";
@@ -7,11 +7,11 @@ function VerifyEmail() {
   const [searchParams] = useSearchParams();
   const token = searchParams.get("token");
 
-  const [status, setStatus] = useState("loading");
+  const [status, setStatus] = useState(token ? "ready" : "invalid");
   const [email, setEmail] = useState("");
 
-  useEffect(() => {
-    if (!token) { setStatus("invalid"); return; }
+  const handleVerify = () => {
+    setStatus("loading");
 
     fetch("/.netlify/functions/verify-email", {
       method: "POST",
@@ -38,7 +38,32 @@ function VerifyEmail() {
         else setStatus("invalid");
       })
       .catch(() => setStatus("invalid"));
-  }, [token]);
+  };
+
+  if (status === "ready") {
+    return (
+      <PageTransition>
+        <section className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-12">
+          <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl p-8 text-center">
+            <div className="w-16 h-16 rounded-full bg-blue-50 flex items-center justify-center mx-auto mb-5">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-[#1a8efd]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+              </svg>
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Verify your email</h2>
+            <p className="text-gray-500 text-sm mb-6">Click below to confirm your email and finish creating your account.</p>
+            <button
+              type="button"
+              onClick={handleVerify}
+              className="w-full bg-[#1a8efd] hover:bg-[#0077e6] text-white py-2.5 rounded-lg text-sm font-semibold transition"
+            >
+              Verify my email
+            </button>
+          </div>
+        </section>
+      </PageTransition>
+    );
+  }
 
   if (status === "loading") {
     return (

@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import PageTransition from '../Components/PageTransition';
 import { useNavigate, useLocation } from 'react-router';
 import { useAuth } from '../AuthContext';
 
-const ADMIN_EMAIL = 'jimutksahoo99@gmail.com';
 const MSG_NOT_FOUND = 'No account found for this email. Please sign up first.';
 const MSG_NOT_VERIFIED = 'Your email is not verified yet. Please check your inbox for the verification email.';
 const MSG_INACTIVE = 'Your account is inactive. Please contact your admin or fill the contact form.';
@@ -26,6 +25,7 @@ function SignIn() {
   const [pendingName, setPendingName] = useState('');
   const [resending, setResending] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
+  const [resendError, setResendError] = useState('');
 
   useEffect(() => {
     if (blockedError) { setError(blockedError); clearBlockedError(); }
@@ -94,10 +94,23 @@ function SignIn() {
   const handleResend = async () => {
     if (resendCooldown > 0 || !pendingEmail) return;
     setResending(true);
+    setResendError('');
     try {
-      await callVerification({ source: verificationSource, email: pendingEmail, name: pendingName, origin: window.location.origin });
-      startResendCooldown();
-    } catch { /* ignore */ }
+      const result = await callVerification({ source: verificationSource, email: pendingEmail, name: pendingName, origin: window.location.origin });
+      if (result.error === 'already_registered') {
+        setResendError('An account with this email already exists. Please sign in instead.');
+      } else if (result.error === 'not_found') {
+        setResendError(MSG_NOT_FOUND);
+      } else if (result.error === 'blocked') {
+        setResendError(MSG_INACTIVE);
+      } else if (result.success) {
+        startResendCooldown();
+      } else {
+        setResendError(result.error || 'Could not resend. Please try again.');
+      }
+    } catch {
+      setResendError('Network error. Please try again.');
+    }
     finally { setResending(false); }
   };
 
@@ -132,6 +145,9 @@ function SignIn() {
                 ? 'Click the link in the email to sign in. The link expires in 1 hour.'
                 : 'Click the link in the email to verify your account. After verifying, come back and sign in.'}
             </p>
+            {resendError && (
+              <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-2 mb-3">{resendError}</p>
+            )}
             <button
               type="button"
               onClick={handleResend}
@@ -142,7 +158,7 @@ function SignIn() {
             </button>
             <button
               type="button"
-              onClick={() => { setVerificationSent(false); switchTab('login'); }}
+              onClick={() => { setVerificationSent(false); setResendError(''); switchTab('login'); }}
               className="w-full text-gray-500 hover:text-gray-700 text-sm font-medium transition"
             >
               Back to Sign in

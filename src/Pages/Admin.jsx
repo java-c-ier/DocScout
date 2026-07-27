@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import { toast } from "react-toastify";
 import { supabase } from "../supabase";
 import { useAuth } from "../AuthContext";
 
@@ -33,9 +34,9 @@ function EditModal({ open, onClose, target, onSave, isSelf }) {
   const handleSave = async () => {
     setSaving(true);
     const updates = t?.provider === "google" ? { role } : { role, blocked: !active };
-    await onSave(t.uid, updates);
+    const ok = await onSave(t.uid, updates);
     setSaving(false);
-    onClose();
+    if (ok) onClose();
   };
 
   return (
@@ -126,7 +127,8 @@ function Admin() {
 
   const fetchUsers = async () => {
     setLoading(true);
-    const { data } = await supabase.rpc('admin_get_all_users');
+    const { data, error } = await supabase.rpc('admin_get_all_users');
+    if (error) toast.error('Failed to load users. Try again.');
     setUsers((data || []).map((u) => ({ uid: u.id, ...u, displayName: u.display_name })));
     setLoading(false);
   };
@@ -134,8 +136,10 @@ function Admin() {
   useEffect(() => { fetchUsers(); }, []);
 
   const handleSaveEdit = async (uid, updates) => {
-    await supabase.rpc('admin_update_user', { p_uid: uid, p_blocked: updates.blocked, p_role: updates.role });
+    const { error } = await supabase.rpc('admin_update_user', { p_uid: uid, p_blocked: updates.blocked, p_role: updates.role });
+    if (error) { toast.error('Failed to update user. Try again.'); return false; }
     setUsers((prev) => prev.map((u) => u.uid === uid ? { ...u, ...updates } : u));
+    return true;
   };
 
   const filtered = users.filter(

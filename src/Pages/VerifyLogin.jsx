@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useState } from "react";
 import { useSearchParams } from "react-router";
 import PageTransition from "../Components/PageTransition";
 import { supabase } from "../supabase";
@@ -8,10 +8,10 @@ function VerifyLogin() {
   const token = searchParams.get("token");
   const email = searchParams.get("email");
 
-  const [status, setStatus] = useState("loading");
+  const [status, setStatus] = useState(token && email ? "ready" : "invalid");
 
-  useEffect(() => {
-    if (!token || !email) { setStatus("invalid"); return; }
+  const handleVerify = () => {
+    setStatus("loading");
 
     supabase.auth.verifyOtp({ token_hash: token, type: 'email' })
       .then(({ error }) => {
@@ -26,7 +26,33 @@ function VerifyLogin() {
         }
       })
       .catch(() => setStatus("invalid"));
-  }, [token, email]);
+  };
+
+  if (status === "ready") {
+    return (
+      <PageTransition>
+        <section className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-12">
+          <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl p-8 text-center">
+            <div className="w-16 h-16 rounded-full bg-blue-50 flex items-center justify-center mx-auto mb-5">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-[#1a8efd]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+              </svg>
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Sign in to DocScout</h2>
+            {email && <p className="text-[#1a8efd] font-semibold text-sm mb-3">{email}</p>}
+            <p className="text-gray-500 text-sm mb-6">Click below to complete your one-click sign-in.</p>
+            <button
+              type="button"
+              onClick={handleVerify}
+              className="w-full bg-[#1a8efd] hover:bg-[#0077e6] text-white py-2.5 rounded-lg text-sm font-semibold transition"
+            >
+              Sign me in
+            </button>
+          </div>
+        </section>
+      </PageTransition>
+    );
+  }
 
   if (status === "loading") {
     return (

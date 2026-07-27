@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Map, { Marker, Popup, NavigationControl } from 'react-map-gl/maplibre';
 import 'maplibre-gl/dist/maplibre-gl.css';
 
@@ -346,7 +346,7 @@ export default function NearbyMap() {
                     No hospitals or clinics found within {radius / 1000} km. Try a larger radius.
                   </div>
                 ) : (
-                  <div className={`space-y-2 overflow-y-auto pr-1 transition-opacity flex-1 min-h-0 ${updating ? 'opacity-50' : 'opacity-100'}`}>
+                  <div className={`space-y-2 pr-1 transition-opacity flex-1 min-h-0 ${updating ? 'opacity-50 overflow-hidden pointer-events-none' : 'opacity-100 overflow-y-auto'}`}>
                     {hospitals.map((h, idx) => (
                       <div key={h.id} className="flex items-center gap-3 bg-white rounded-xl border border-gray-100 px-4 py-3 hover:border-blue-100 hover:bg-blue-50/30 transition">
                         <div className="flex-shrink-0 w-7 h-7 rounded-full bg-blue-500 text-white flex items-center justify-center text-xs font-bold">

@@ -34,6 +34,9 @@ export default async (req) => {
   // Best-effort: let the device that originally requested this link (if different
   // from this one) pick up its own session via check-login-request polling.
   if (rid) {
+    const { data: whoami, error: whoamiErr } = await supabase.rpc('whoami');
+    console.error('verify-login: acting as', whoami, whoamiErr?.message);
+
     const { data: requestRow, error: rowErr } = await supabase
       .from('login_requests')
       .select('id, email, status, created_at')

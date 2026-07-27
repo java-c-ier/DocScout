@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import Papa from "papaparse";
 import { toast } from "react-toastify";
-import { addDoctor } from "../supabase";
+import { addHospital } from '../supabase';
 
 const PREVIEW_ROWS = 8;
 
@@ -22,7 +22,7 @@ function parseCsv(file) {
   });
 }
 
-const EXPECTED_COLUMNS = ["Name", "Qualification", "Experience", "Department", "Specialization", "Timing", "District", "Hospital"];
+const EXPECTED_COLUMNS = ["Name", "Website", "Rating", "Type", "Contact", "GoogleMapLink"];
 
 function validateColumns(fields) {
   return EXPECTED_COLUMNS.filter((c) => !fields.includes(c));
@@ -137,7 +137,7 @@ function CsvPreviewModal({ entry, onClose }) {
   );
 }
 
-function CSVUploadDoctors() {
+function CSVUploadHospitals() {
   const [entries, setEntries] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
@@ -183,7 +183,7 @@ function CSVUploadDoctors() {
 
   const handleFileUpload = async () => {
     if (!entries.length) {
-      toast.error("Please select at least one CSV file first!");
+      toast.error("Please select at least one file first!");
       return;
     }
     if (entries.some((e) => e.parsing)) {
@@ -212,39 +212,18 @@ function CSVUploadDoctors() {
         return;
       }
 
-      let succeeded = 0;
-      const failures = [];
+      let total = 0;
       for (const entry of entries) {
-        for (const row of entry.data) {
-          const result = await addDoctor(row);
-          if (result?.success) {
-            succeeded += 1;
-          } else {
-            failures.push({ fileName: entry.file.name, name: row.Name || "(unnamed)", reason: result?.reason || "Unknown error" });
-          }
+        for (const hospital of entry.data) {
+          await addHospital(hospital, entry.file.name);
         }
+        total += entry.data.length;
       }
-
-      if (succeeded) toast.success(`${succeeded} doctor(s) added successfully!`);
-      if (failures.length) {
-        toast.error(`${failures.length} doctor(s) failed to upload — see console for details.`, { autoClose: 8000 });
-        console.error("Doctor upload failures:", failures);
-        failures.slice(0, 5).forEach(({ fileName, name, reason }) =>
-          toast.error(
-            <span>
-              {fileName} — <span className="font-semibold">{name}</span>: {reason}
-            </span>,
-            { autoClose: 8000 }
-          )
-        );
-        if (failures.length > 5) {
-          toast.error(`...and ${failures.length - 5} more (see console).`, { autoClose: 8000 });
-        }
-      }
+      toast.success(`${total} hospital(s) added successfully!`);
       setEntries([]);
     } catch (err) {
-      console.error("Error uploading doctors:", err);
-      toast.error("Error uploading doctors — see console.");
+      console.error("Error uploading hospitals:", err);
+      toast.error("Error uploading hospitals — see console.");
     } finally {
       setUploading(false);
     }
@@ -256,16 +235,16 @@ function CSVUploadDoctors() {
         <div className="flex flex-col items-center mb-8 gap-2">
           <div className="w-14 h-14 rounded-full bg-blue-50 flex items-center justify-center mb-1">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-[#1a8efd]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 21a9 9 0 100-18 9 9 0 000 18zm0-13.5v6m0 0h3m-3 0H9" />
             </svg>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">Upload Doctors</h1>
-          <p className="text-gray-500 text-sm text-center">Bulk-add doctor records from one or more CSV files.</p>
+          <h1 className="text-2xl font-bold text-gray-900">Upload Hospitals</h1>
+          <p className="text-gray-500 text-sm text-center">Bulk-add hospital records from one or more CSV files.</p>
         </div>
 
         <div className="bg-white rounded-2xl shadow-2xl p-8">
           <label
-            htmlFor="doctorsCsv"
+            htmlFor="csvFile"
             onDragOver={(e) => { e.preventDefault(); setDragActive(true); }}
             onDragLeave={() => setDragActive(false)}
             onDrop={handleDrop}
@@ -278,7 +257,7 @@ function CSVUploadDoctors() {
             </svg>
             <p className="text-sm font-medium text-gray-700">Click to choose or drag CSV files here</p>
             <p className="text-xs text-gray-400">.csv files only · multiple allowed</p>
-            <input id="doctorsCsv" type="file" accept=".csv" multiple onChange={handleFileChange} className="hidden" />
+            <input id="csvFile" type="file" accept=".csv" multiple onChange={handleFileChange} className="hidden" />
           </label>
 
           {entries.length > 0 && (
@@ -333,4 +312,4 @@ function CSVUploadDoctors() {
   );
 }
 
-export default CSVUploadDoctors;
+export default CSVUploadHospitals;

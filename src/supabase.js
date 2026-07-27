@@ -65,28 +65,46 @@ export const getReviewsByAspect = async (hospitalId) => {
 
 export const addDoctor = async (doctorData) => {
   const { Name, Qualification, Experience, Department, Specialization, Timing, District, Hospital } = doctorData;
-  if (!District || !Hospital || !Department) { console.error('Missing required fields'); return; }
+  if (!District || !Hospital || !Department) {
+    console.error('Missing required fields');
+    return { success: false, reason: 'Missing required fields (District, Hospital, or Department)' };
+  }
 
-  const { data: hosp } = await supabase
+  const { data: hosp, error: hospErr } = await supabase
     .from('hospitals')
     .select('id')
     .eq('district', District.trim())
     .ilike('name', Hospital.trim())
     .single();
+  if (hospErr || !hosp) {
+    console.error('Hospital not found:', Hospital, hospErr?.message);
+    return { success: false, reason: `Hospital not found: ${Hospital} (${District})` };
+  }
 
-  if (!hosp) { console.error('Hospital not found:', Hospital); return; }
+  const { data: dept, error: deptErr } = await supabase
+    .from('departments')
+    .upsert({ hospital_id: hosp.id, name: Department.trim() }, { onConflict: 'hospital_id,name' })
+    .select('id')
+    .single();
+  if (deptErr || !dept) {
+    console.error('Could not create department:', Department, deptErr?.message);
+    return { success: false, reason: `Could not create department: ${Department}` };
+  }
 
   const { error } = await supabase.from('doctors').upsert(
     {
-      hospital_id: hosp.id,
-      name: Name,
-      department: Department.trim(),
-      qualification: Qualification || '',
-      experience: Experience || '',
-      specialization: Specialization || '',
-      timing: Timing || '',
+      department_id: dept.id,
+      name: Name?.trim() || '',
+      qualification: Qualification?.trim() || '',
+      experience: Experience?.trim() || '',
+      specialization: Specialization?.trim() || '',
+      timing: Timing?.trim() || '',
     },
-    { onConflict: 'hospital_id,name,department' }
+    { onConflict: 'department_id,name' }
   );
-  if (error) console.error('Error adding doctor:', error.message);
+  if (error) {
+    console.error('Error adding doctor:', error.message);
+    return { success: false, reason: `Error adding doctor: ${error.message}` };
+  }
+  return { success: true };
 };
